@@ -1,11 +1,32 @@
 from flask import Flask, jsonify
 from flask_jwt_extended import JWTManager
 from models import db
+from datetime import timedelta
 
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
-    app.config['JWT_SECRET_KEY'] = 'your-secret-key'  # Для разработки
+    
+# Конфигурация JWT 
+    app.config.update({
+    'SQLALCHEMY_DATABASE_URI': 'sqlite:///db.sqlite',
+    'JWT_SECRET_KEY': 'your-256-bit-secret-must-be-32-chars-long!', # Поместить в .env
+    'JWT_ALGORITHM': 'HS256',
+    'JWT_HEADER_TYPE': 'Bearer',
+    'JWT_TOKEN_LOCATION': ['headers'],
+    'JWT_IDENTITY_CLAIM': 'sub',  
+    'JWT_ACCESS_TOKEN_EXPIRES': timedelta(hours=1)
+    })
+    
+    db.init_app(app)
+    jwt = JWTManager(app)
+    
+    from auth import auth_bp
+    from projects import projects_bp
+    from tasks import tasks_bp
+    
+    app.register_blueprint(auth_bp, url_prefix='/auth')
+    app.register_blueprint(projects_bp, url_prefix='/projects')
+    app.register_blueprint(tasks_bp, url_prefix='/tasks')
 
     @app.route('/')
     def home():
@@ -18,16 +39,7 @@ def create_app():
                 }
             }
         })
-
-    # Инициализация расширений
-    db.init_app(app)
-    jwt = JWTManager(app)
     
-    # Регистрация Blueprint
-    from auth import auth_bp
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-    
-    # Создание таблиц
     with app.app_context():
         db.create_all()
     
