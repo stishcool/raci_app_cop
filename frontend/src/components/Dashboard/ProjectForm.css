@@ -1,0 +1,256 @@
+.project-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: 'Arial', sans-serif;
+}
+
+.project-form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.user-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.filter-toggle {
+  position: relative;
+}
+
+.filter-button,
+.add-users-button {
+  padding: 8px 16px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.filter-button:hover,
+.add-users-button:hover {
+  background: #2980b9;
+}
+
+.filter-panel,
+.add-users-panel {
+  position: absolute;
+  right: 0;
+  top: 40px;
+  width: 250px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: none;
+  z-index: 10;
+}
+
+.filter-panel.open,
+.add-users-panel.open {
+  display: block;
+}
+
+.filter-panel select,
+.add-users-panel select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.project-title-input,
+.search-input,
+.phase-name input,
+.add-position input,
+.raci-table input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+}
+
+.raci-table input {
+  width: 150px;
+}
+
+.user-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 4px;
+  background: white;
+}
+
+.user-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.user-item:hover {
+  background: #f0f0f0;
+}
+
+.user-item.selected {
+  background: #e6f0fa;
+}
+
+.user-item:last-child {
+  border-bottom: none;
+}
+
+.user-item input[type="checkbox"] {
+  margin-left: 10px;
+}
+
+.proceed-button,
+.save-button,
+.add-button,
+.remove-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.proceed-button {
+  background: #2ecc71;
+  color: white;
+}
+
+.proceed-button:hover {
+  background: #27ae60;
+}
+
+.save-button {
+  background: #3498db;
+  color: white;
+}
+
+.save-button:hover {
+  background: #2980b9;
+}
+
+.add-button {
+  background: #2ecc71;
+  color: white;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-button:hover {
+  background: #27ae60;
+}
+
+.remove-button {
+  background: #e74c3c;
+  color: white;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-button:hover {
+  background: #c0392b;
+}
+
+.phase-selection {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.phase-selection select {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+}
+
+.raci-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.raci-content {
+  display: flex;
+  gap: 10px;
+  position: relative;
+}
+
+.raci-table-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.raci-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.raci-table th,
+.raci-table td {
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: center;
+}
+
+.raci-table th:first-child,
+.raci-table td:first-child {
+  min-width: 150px;
+}
+
+.raci-table th {
+  background: #ecf0f1;
+  font-weight: bold;
+}
+
+.raci-table select {
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 12px;
+  background: white;
+}
+
+.add-position {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
