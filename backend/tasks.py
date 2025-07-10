@@ -1,58 +1,32 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, Task, RACIAssignment, ProjectMember
+from models import db, Task, RACIAssignment, ProjectMember, ProjectStage, Role
+from datetime import datetime
 
-tasks_bp = Blueprint('tasks', __name__, url_prefix='/tasks')
+tasks_bp = Blueprint('tasks', __name__)
 
 @tasks_bp.route('/', methods=['POST'])
 @jwt_required()
 def create_task():
     data = request.get_json()
+    current_user_id = int(get_jwt_identity())
     
-    if not all(key in data for key in ['title', 'project_id']):
-        return jsonify({'error': 'Missing required fields (title, project_id)'}), 400
-    
-    current_user_id = get_jwt_identity()
-    
-    from models import Project  
-    if not Project.query.get(data['project_id']):
-        return jsonify({'error': 'Project not found'}), 404
-    
+    # Проверка что пользователь участник проекта
+    stage = ProjectStage.query.get_or_404(data['stage_id'])
     if not ProjectMember.query.filter_by(
-        user_id=int(current_user_id),
-        project_id=data['project_id']
+        user_id=current_user_id,
+        project_id=stage.project_id
     ).first():
-        return jsonify({'error': 'Access denied. You are not a project member'}), 403
-    
-    if not all(key in data for key in ['title', 'project_id']):
-        return jsonify({'error': 'Missing required fields (title, project_id)'}), 400
-    
-    current_user_id = get_jwt_identity()  
-    
-    if not ProjectMember.query.filter_by(
-        user_id=int(current_user_id), 
-        project_id=data['project_id']
-    ).first():
-        return jsonify({'error': 'Access denied or project not found'}), 403
+        return jsonify({'error': 'Access denied'}), 403
     
     task = Task(
+        stage_id=data['stage_id'],
         title=data['title'],
         description=data.get('description'),
-        project_id=data['project_id'],
-        status='todo',
-        priority=data.get('priority', 'medium')
+        priority=data.get('priority', 'medium'),
+        is_completed=data.get('is_completed', False)
     )
     db.session.add(task)
-    db.session.commit()
-    
-    for assignment in data.get('raci_assignments', []):
-        raci = RACIAssignment(
-            task_id=task.id,
-            user_id=assignment['user_id'],
-            role=assignment['role']
-        )
-        db.session.add(raci)
-    
     db.session.commit()
     
     return jsonify({'id': task.id}), 201
@@ -60,104 +34,97 @@ def create_task():
 @tasks_bp.route('/', methods=['GET'])
 @jwt_required()
 def get_tasks():
+    stage_id = request.args.get('stage_id')
     project_id = request.args.get('project_id')
-    status = request.args.get('status')
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
     
-    if project_id:
-        if not ProjectMember.query.filter_by(
-            user_id=int(current_user_id),
-            project_id=project_id
-        ).first():
-            return jsonify({'error': 'Access denied'}), 403
+    query = Task.query.join(ProjectStage)
     
-    query = Task.query
-    if project_id:
-        query = query.filter_by(project_id=project_id)
-    if status:
-        query = query.filter_by(status=status)
+    if stage_id:
+        query = query.filter(Task.stage_id == stage_id)
+    elif project_id:
+        query = query.filter(ProjectStage.project_id == project_id)
+    
+    if project_id and not ProjectMember.query.filter_by(
+        user_id=current_user_id,
+        project_id=project_id
+    ).first():
+        return jsonify({'error': 'Access denied'}), 403
     
     tasks = query.all()
     return jsonify([{
         'id': t.id,
         'title': t.title,
-        'status': t.status,
-        'priority': t.priority
+        'stage_id': t.stage_id,
+        'priority': t.priority,
+        'is_completed': t.is_completed
     } for t in tasks])
 
 @tasks_bp.route('/<int:task_id>/raci', methods=['GET'])
 @jwt_required()
 def get_task_raci(task_id):
     task = Task.query.get_or_404(task_id)
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
     
+    stage = ProjectStage.query.get(task.stage_id)
     if not ProjectMember.query.filter_by(
-        user_id=int(current_user_id),
-        project_id=task.project_id
+        user_id=current_user_id,
+        project_id=stage.project_id
     ).first():
         return jsonify({'error': 'Access denied'}), 403
     
-    raci_assignments = RACIAssignment.query.filter_by(task_id=task_id).all()
-    
+    raci_assignments = RACIAssignment.query.filter_by(stage_id=task.stage_id).all()
     return jsonify([{
         'user_id': a.user_id,
-        'role': a.role
+        'username': a.user.username,
+        'role': a.role.title if a.role else None
     } for a in raci_assignments])
 
 @tasks_bp.route('/<int:task_id>/status', methods=['PATCH'])
 @jwt_required()
-def update_status(task_id):
+def update_task_status(task_id):
     data = request.get_json()
-    
-    if 'status' not in data:
-        return jsonify({"error": "Status is required"}), 400
-    
-    if data['status'] not in ['todo', 'in_progress', 'done']:
-        return jsonify({"error": "Invalid status"}), 400
-    
     task = Task.query.get_or_404(task_id)
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
     
+    stage = ProjectStage.query.get(task.stage_id)
     if not ProjectMember.query.filter_by(
-        user_id=int(current_user_id),
-        project_id=task.project_id
+        user_id=current_user_id,
+        project_id=stage.project_id
     ).first():
         return jsonify({'error': 'Access denied'}), 403
     
-    task.status = data['status']
-    db.session.commit()
+    if 'is_completed' in data:
+        task.is_completed = data['is_completed']
     
-    return jsonify({"message": "Status updated"})
+    db.session.commit()
+    return jsonify({'message': 'Статус задачи обновлен'})
 
 @tasks_bp.route('/<int:task_id>/raci', methods=['PUT'])
 @jwt_required()
-def update_raci(task_id):
+def update_task_raci(task_id):
     data = request.get_json()
-    
-    if 'assignments' not in data:
-        return jsonify({"error": "Assignments are required"}), 400
-    
-    if sum(1 for a in data['assignments'] if a['role'] == 'A') != 1:
-        return jsonify({"error": "Must have exactly one Accountable (A)"}), 400
-    
     task = Task.query.get_or_404(task_id)
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
     
-    if not ProjectMember.query.filter_by(
-        user_id=int(current_user_id),
-        project_id=task.project_id
+    # Проверка доступа (только ответственный может менять RACI)
+    stage = ProjectStage.query.get(task.stage_id)
+    if not RACIAssignment.query.filter_by(
+        stage_id=stage.id,
+        user_id=current_user_id,
+        role_id=Role.query.filter_by(title='A').first().id
     ).first():
-        return jsonify({'error': 'Access denied'}), 403
+        return jsonify({'error': 'Only accountable can update RACI'}), 403
     
-    RACIAssignment.query.filter_by(task_id=task_id).delete()
+    RACIAssignment.query.filter_by(stage_id=stage.id).delete()
     
     for assignment in data['assignments']:
         raci = RACIAssignment(
-            task_id=task_id,
+            stage_id=stage.id,
             user_id=assignment['user_id'],
-            role=assignment['role']
+            role_id=assignment['role_id']
         )
         db.session.add(raci)
     
     db.session.commit()
-    return jsonify({"message": "RACI assignments updated"})
+    return jsonify({'message': 'RACI матрица обновлена'})

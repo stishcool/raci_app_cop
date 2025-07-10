@@ -3,70 +3,22 @@ import { getProjects } from '../../api/projects';
 import Modal from './Modal';
 import ProjectForm from './ProjectForm';
 import ProjectCards from './ProjectCards';
+import RaciMatrix from './RaciMatrix';
 import ErrorBoundary from './ErrorBoundary';
 import './Dashboard.css';
 
 const AdminDashboard = ({ user }) => {
   const [projects, setProjects] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState('project'); // 'project' или 'raci'
   const [editingProject, setEditingProject] = useState(null);
+  const [raciProjectId, setRaciProjectId] = useState(null);
 
   useEffect(() => {
-    console.log('AdminDashboard: Загрузка проектов');
     const fetchProjects = async () => {
       try {
         const data = await getProjects();
-        console.log('AdminDashboard: Проекты получены:', data);
-        // Минимальная нормализация
-        const normalizedProjects = data.length > 0 ? data.map(project => ({
-          id: project.id || Date.now() + Math.random(),
-          name: typeof project.name === 'string' ? project.name : 'Без названия',
-          description: typeof project.description === 'string' ? project.description : '',
-          phases: Array.isArray(project.phases) ? project.phases.map(phase => ({
-            name: typeof phase.name === 'string' ? phase.name : 'Фаза',
-            stages: Array.isArray(phase.stages) ? phase.stages.filter(s => typeof s === 'string') : ['Этап 1'],
-            selectedUsers: Array.isArray(phase.selectedUsers) ? phase.selectedUsers : [],
-            positions: Array.isArray(phase.positions) ? phase.positions.map(pos => ({
-              name: typeof pos.name === 'string' ? pos.name : 'Должность',
-              users: Array.isArray(pos.users) ? pos.users.map(user => ({
-                id: user.id || 0,
-                name: typeof user.name === 'string' ? user.name : 'Неизвестный',
-                role: typeof user.role === 'object' ? user.role : {}
-              })) : []
-            })) : [],
-            phaseEndDate: typeof phase.phaseEndDate === 'string' ? phase.phaseEndDate : ''
-          })) : [{ name: 'Фаза 1', stages: ['Этап 1'], selectedUsers: [], positions: [], phaseEndDate: '' }]
-        })) : [
-          {
-            id: 1,
-            name: 'Проект 1',
-            description: 'Описание проекта 1',
-            phases: [
-              {
-                name: 'Фаза 1',
-                stages: ['Сбор требований', 'Анализ'],
-                selectedUsers: [],
-                positions: [],
-                phaseEndDate: ''
-              },
-            ],
-          },
-          {
-            id: 2,
-            name: 'Проект 2',
-            description: 'Описание проекта 2',
-            phases: [
-              {
-                name: 'Фаза 1',
-                stages: ['Планирование'],
-                selectedUsers: [],
-                positions: [],
-                phaseEndDate: ''
-              },
-            ],
-          },
-        ];
-        setProjects(normalizedProjects);
+        setProjects(data);
       } catch (error) {
         console.error('AdminDashboard: Ошибка получения проектов:', error);
         setProjects([]);
@@ -75,28 +27,85 @@ const AdminDashboard = ({ user }) => {
     fetchProjects();
   }, []);
 
-  const handleCreateProject = (newProject) => {
-    console.log('AdminDashboard: Создание проекта:', newProject);
-    setProjects([...projects, { id: projects.length + 1, ...newProject }]);
-    setIsModalOpen(false);
+  const handleCreateProject = async (projectData) => {
+    try {
+      const response = await fetch('http://localhost:5000/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(projectData),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Ошибка создания проекта');
+      }
+      setProjects([...projects, { id: data.id, ...projectData, is_archived: false }]);
+      setModalContent('raci');
+      setRaciProjectId(data.id);
+    } catch (error) {
+      console.error('AdminDashboard: Ошибка создания проекта:', error);
+    }
   };
 
-  const handleEditProject = (updatedProject) => {
-    console.log('AdminDashboard: Обновление проекта:', updatedProject);
-    setProjects(projects.map(p => (p.id === updatedProject.id ? updatedProject : p)));
-    setIsModalOpen(false);
-    setEditingProject(null);
+  const handleEditProject = async (updatedProject) => {
+    try {
+      const response = await fetch(`http://localhost:5000/projects/${updatedProject.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(updatedProject),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Ошибка обновления проекта');
+      }
+      setProjects(projects.map(p => (p.id === updatedProject.id ? { ...p, ...updatedProject } : p)));
+      setModalContent('raci');
+      setRaciProjectId(updatedProject.id);
+    } catch (error) {
+      console.error('AdminDashboard: Ошибка обновления проекта:', error);
+    }
   };
 
-  const handleDeleteProject = (projectId) => {
-    console.log('AdminDashboard: Удаление проекта:', projectId);
-    setProjects(projects.filter(p => p.id !== projectId));
+  const handleArchiveProject = async (projectId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/projects/${projectId}/archive`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Ошибка архивирования проекта');
+      }
+      setProjects(projects.map(p => (p.id === projectId ? { ...p, is_archived: true } : p)));
+    } catch (error) {
+      console.error('AdminDashboard: Ошибка архивирования проекта:', error);
+    }
   };
 
   const handleOpenProjectDetails = (project) => {
-    console.log('AdminDashboard: Открытие деталей проекта:', project);
     setEditingProject(project);
+    setModalContent('project');
     setIsModalOpen(true);
+  };
+
+  const handleOpenRaci = (projectId) => {
+    setRaciProjectId(projectId);
+    setModalContent('raci');
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setModalContent('project');
+    setEditingProject(null);
+    setRaciProjectId(null);
   };
 
   return (
@@ -110,7 +119,8 @@ const AdminDashboard = ({ user }) => {
             <ProjectCards
               projects={projects}
               onOpenDetails={handleOpenProjectDetails}
-              onDelete={handleDeleteProject}
+              onArchive={handleArchiveProject}
+              onOpenRaci={handleOpenRaci}
             />
           </ErrorBoundary>
         )}
@@ -118,7 +128,7 @@ const AdminDashboard = ({ user }) => {
       <button
         className="fab-create"
         onClick={() => {
-          console.log('AdminDashboard: Клик по кнопке Создать');
+          setModalContent('project');
           setEditingProject(null);
           setIsModalOpen(true);
         }}
@@ -126,17 +136,15 @@ const AdminDashboard = ({ user }) => {
         +
       </button>
       {isModalOpen && (
-        <Modal
-          onClose={() => {
-            console.log('AdminDashboard: Закрытие модального окна');
-            setIsModalOpen(false);
-            setEditingProject(null);
-          }}
-        >
-          <ProjectForm
-            onSubmit={editingProject ? handleEditProject : handleCreateProject}
-            initialData={editingProject}
-          />
+        <Modal onClose={handleCloseModal}>
+          {modalContent === 'project' ? (
+            <ProjectForm
+              onSubmit={editingProject ? handleEditProject : handleCreateProject}
+              initialData={editingProject}
+            />
+          ) : (
+            <RaciMatrix projectId={raciProjectId} />
+          )}
         </Modal>
       )}
     </div>

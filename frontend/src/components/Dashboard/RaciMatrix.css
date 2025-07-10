@@ -1,48 +1,69 @@
 .raci-matrix {
-  max-width: 800px;
-  margin: 20px 0;
+  margin-top: 20px;
 }
 
 .raci-matrix h3 {
   color: #2c3e50;
+}
+
+.raci-matrix form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   margin-bottom: 20px;
 }
 
-.raci-matrix input {
-  width: 100%;
-  padding: 10px;
-  margin: 10px 0;
+.raci-matrix label {
+  font-weight: bold;
+  color: #34495e;
+}
+
+.raci-matrix input,
+.raci-matrix select {
+  padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
 }
 
 .raci-matrix button {
-  padding: 10px 20px;
+  padding: 10px;
   background: #3498db;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  margin: 10px 0;
 }
 
-.raci-matrix table {
+.raci-matrix button:hover {
+  background: #2980b9;
+}
+
+.raci-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.raci-matrix th,
-.raci-matrix td {
+.raci-table th,
+.raci-table td {
   border: 1px solid #ddd;
-  padding: 10px;
+  padding: 8px;
   text-align: center;
 }
 
-.raci-matrix th {
+.raci-table th {
   background: #f9f9f9;
+  color: #2c3e50;
 }
 
-.raci-matrix select {
+.raci-table input {
+  width: 100%;
+}
+
+.raci-table select {
+  width: 100%;
   padding: 5px;
-  border-radius: 4px;
+}
+
+.error-message {
+  color: #e74c3c;
 }

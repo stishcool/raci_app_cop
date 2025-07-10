@@ -20,9 +20,6 @@ function App() {
       try {
         const userData = await getCurrentUser();
         console.log('App: Пользователь получен:', userData);
-        if (!userData) {
-          throw new Error('Пользователь не найден');
-        }
         setUser(userData);
       } catch (error) {
         console.error('App: Ошибка получения пользователя:', error);
@@ -42,16 +39,18 @@ function App() {
 
   console.log('App: Рендеринг, пользователь:', user);
 
+  const isAdmin = user?.positions?.includes('Администратор');
+
   return (
     <BrowserRouter>
       <Routes>
         <Route
           path="/login"
-          element={user ? <Navigate to={user.is_admin ? '/admin' : '/'} /> : <Login setUser={setUser} />}
+          element={user ? <Navigate to={isAdmin ? '/admin' : '/'} /> : <Login setUser={setUser} />}
         />
         <Route
           path="/admin"
-          element={user && user.is_admin ? <AdminLayout user={user} setUser={setUser} /> : <Navigate to="/login" />}
+          element={user && isAdmin ? <AdminLayout user={user} setUser={setUser} /> : <Navigate to="/login" />}
         >
           <Route index element={<AdminDashboard user={user} />} />
           <Route path="management" element={<Management />} />
@@ -60,12 +59,13 @@ function App() {
         </Route>
         <Route
           path="/"
-          element={user && !user.is_admin ? <UserLayout user={user} setUser={setUser} /> : <Navigate to="/login" />}
+          element={user && !isAdmin ? <UserLayout user={user} setUser={setUser} /> : <Navigate to="/login" />}
         >
           <Route index element={<UserDashboard user={user} />} />
           <Route path="notifications" element={<Notifications user={user} />} />
           <Route path="profile" element={<Profile user={user} setUser={setUser} />} />
         </Route>
+        <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </BrowserRouter>
   );
