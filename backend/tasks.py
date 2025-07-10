@@ -11,7 +11,6 @@ def create_task():
     data = request.get_json()
     current_user_id = int(get_jwt_identity())
     
-    # Проверка что пользователь участник проекта
     stage = ProjectStage.query.get_or_404(data['stage_id'])
     if not ProjectMember.query.filter_by(
         user_id=current_user_id,
