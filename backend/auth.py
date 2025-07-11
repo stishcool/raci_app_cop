@@ -3,6 +3,15 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from models import db, User, Position, UserPosition
 from datetime import datetime
 from werkzeug.security import generate_password_hash
+from marshmallow import Schema, fields, validate, ValidationError
+from admin import is_admin
+
+class UserUpdateSchema(Schema):
+    username = fields.Str(validate=validate.Length(min=3, max=100))
+    full_name = fields.Str(validate=validate.Length(min=1, max=100))
+    phone = fields.Str(allow_none=True, validate=validate.Length(max=30))
+    email = fields.Str(allow_none=True, validate=validate.Email())
+    is_active = fields.Boolean()
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -29,6 +38,48 @@ def get_current_user():
         'email': user.email,
         'positions': [p.title for p in user.positions]
     })
+
+@auth_bp.route('/me', methods=['PATCH'])
+@jwt_required()
+def update_current_user():
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    is_admin_user = is_admin(user_id)
+
+    try:
+        schema = UserUpdateSchema()
+        data = schema.load(request.get_json(), partial=True)
+
+        # Проверка прав: обычный пользователь может менять только full_name, phone, email
+        if not is_admin_user:
+            allowed_fields = {'full_name', 'phone', 'email'}
+            if any(key not in allowed_fields for key in data.keys()):
+                return jsonify({"error": "Недостаточно прав для изменения этих полей"}), 403
+
+        # Обновление полей
+        if 'username' in data and is_admin_user:
+            if User.query.filter_by(username=data['username']).first():
+                return jsonify({"error": "Имя пользователя уже существует"}), 400
+            user.username = data['username']
+        if 'full_name' in data:
+            user.full_name = data['full_name']
+        if 'phone' in data:
+            user.phone = data['phone']
+        if 'email' in data:
+            user.email = data['email']
+        if 'is_active' in data and is_admin_user:
+            user.is_active = data['is_active']
+
+        user.updated_at = datetime.utcnow()
+        db.session.commit()
+
+        return jsonify({"message": "Информация о пользователе обновлена"})
+
+    except ValidationError as e:
+        return jsonify({"error": "Некорректные данные", "details": e.messages}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Внутренняя ошибка сервера", "details": str(e)}), 500
     
 @auth_bp.route('/add-user', methods=['POST'])
 @jwt_required()
