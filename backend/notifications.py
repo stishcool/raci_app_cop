@@ -7,6 +7,7 @@ notifications_bp = Blueprint('notifications', __name__)
 @notifications_bp.route('/notifications', methods=['GET'])
 @jwt_required()
 def get_notifications():
+    """Получение списка уведомлений текущего пользователя (доступно любому авторизованному пользователю)."""
     current_user_id = int(get_jwt_identity())
     notifications = Notification.query.filter_by(user_id=current_user_id).order_by(Notification.created_at.desc()).all()
     

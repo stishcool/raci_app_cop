@@ -4,6 +4,7 @@ from models import db, Project, ProjectMember, User, ProjectStage, Task, Notific
 from datetime import datetime
 from marshmallow import Schema, fields, validate, ValidationError
 from admin import is_admin
+from sqlalchemy.exc import IntegrityError
 
 class ProjectCreateSchema(Schema):
     title = fields.Str(required=True, validate=validate.Length(min=1, max=100))
@@ -19,30 +20,15 @@ class ProjectUpdateSchema(Schema):
 class ProjectMemberSchema(Schema):
     user_id = fields.Int(required=True)
 
-
 projects_bp = Blueprint('projects', __name__)
-
-@projects_bp.route('/', methods=['GET'])
-@jwt_required()
-def get_projects():
-    current_user_id = int(get_jwt_identity())
-    projects = Project.query.join(ProjectMember).filter(
-        ProjectMember.user_id == current_user_id
-    ).all()
-    
-    return jsonify([{
-        'id': p.id,
-        'title': p.title,
-        'description': p.description,
-        'created_by': p.created_by,
-        'deadline': p.deadline.isoformat() if p.deadline else None,
-        'is_archived': p.is_archived
-    } for p in projects])
 
 @projects_bp.route('/', methods=['POST'])
 @jwt_required()
 def create_project():
+    """Создание нового проекта (доступно только администратору)."""
     current_user_id = int(get_jwt_identity())
+    if not is_admin(current_user_id):
+        return jsonify({"error": "Требуются права администратора"}), 403
     
     try:
         schema = ProjectCreateSchema()
@@ -57,14 +43,12 @@ def create_project():
         db.session.add(project)
         db.session.commit()  
         
-        # Добавляем создателя как участника
         db.session.add(ProjectMember(
             project_id=project.id,
             user_id=current_user_id,
             added_at=datetime.utcnow()
         ))
         
-        # Уведомление создателю
         notification = Notification(
             user_id=current_user_id,
             message=f"Создан проект: {project.title}",
@@ -79,6 +63,9 @@ def create_project():
     
     except ValidationError as e:
         return jsonify({"error": "Некорректные данные", "details": e.messages}), 400
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"error": "Проект с таким названием уже существует"}), 400
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "Внутренняя ошибка", "details": str(e)}), 500
@@ -86,11 +73,12 @@ def create_project():
 @projects_bp.route('/<int:project_id>', methods=['PATCH'])
 @jwt_required()
 def update_project(project_id):
+    """Обновление данных проекта (доступно только администратору)."""
     current_user_id = int(get_jwt_identity())
-    project = Project.query.get_or_404(project_id)
+    if not is_admin(current_user_id):
+        return jsonify({"error": "Требуются права администратора"}), 403
     
-    if project.created_by != current_user_id and not is_admin(current_user_id):
-        return jsonify({"error": "Требуются права создателя или администратора"}), 403
+    project = Project.query.get_or_404(project_id)
     
     try:
         schema = ProjectUpdateSchema()
@@ -146,6 +134,9 @@ def update_project(project_id):
     
     except ValidationError as e:
         return jsonify({"error": "Некорректные данные", "details": e.messages}), 400
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"error": "Проект с таким названием уже существует"}), 400
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "Внутренняя ошибка", "details": str(e)}), 500
@@ -153,29 +144,25 @@ def update_project(project_id):
 @projects_bp.route('/<int:project_id>/archive', methods=['POST'])
 @jwt_required()
 def archive_project(project_id):
+    """Архивирование проекта (доступно только администратору)."""
+    current_user_id = int(get_jwt_identity())
+    if not is_admin(current_user_id):
+        return jsonify({"error": "Требуются права администратора"}), 403
+    
     project = Project.query.get_or_404(project_id)
     project.is_archived = True
     db.session.commit()
     return jsonify({'message': 'Проект заархивирован'})
 
-@projects_bp.route('/<int:project_id>/members', methods=['GET'])
-@jwt_required()
-def get_project_members(project_id):
-    members = ProjectMember.query.filter_by(project_id=project_id).all()
-    return jsonify([{
-        'user_id': m.user_id,
-        'username': m.user.username,
-        'full_name': m.user.full_name
-    } for m in members])
-
 @projects_bp.route('/<int:project_id>/members', methods=['POST'])
 @jwt_required()
 def add_project_member(project_id):
+    """Добавление пользователя в проект (доступно только администратору)."""
     current_user_id = int(get_jwt_identity())
-    project = Project.query.get_or_404(project_id)
+    if not is_admin(current_user_id):
+        return jsonify({"error": "Требуются права администратора"}), 403
     
-    if project.created_by != current_user_id and not is_admin(current_user_id):
-        return jsonify({"error": "Требуются права создателя или администратора"}), 403
+    project = Project.query.get_or_404(project_id)
     
     try:
         schema = ProjectMemberSchema()
@@ -193,7 +180,6 @@ def add_project_member(project_id):
         )
         db.session.add(member)
         
-        # Уведомление добавленному пользователю
         notification = Notification(
             user_id=data['user_id'],
             message=f"Вы добавлены в проект: {project.title}",
@@ -225,6 +211,11 @@ def add_project_member(project_id):
 @projects_bp.route('/<int:project_id>/members/<int:user_id>', methods=['DELETE'])
 @jwt_required()
 def remove_project_member(project_id, user_id):
+    """Удаление пользователя из проекта (доступно только администратору)."""
+    current_user_id = int(get_jwt_identity())
+    if not is_admin(current_user_id):
+        return jsonify({"error": "Требуются права администратора"}), 403
+    
     member = ProjectMember.query.filter_by(
         project_id=project_id,
         user_id=user_id
@@ -237,6 +228,11 @@ def remove_project_member(project_id, user_id):
 @projects_bp.route('/<int:project_id>/stages', methods=['POST'])
 @jwt_required()
 def create_project_stage(project_id):
+    """Создание нового этапа в проекте (доступно только администратору)."""
+    current_user_id = int(get_jwt_identity())
+    if not is_admin(current_user_id):
+        return jsonify({"error": "Требуются права администратора"}), 403
+    
     data = request.get_json()
     stage = ProjectStage(
         project_id=project_id,
@@ -249,21 +245,14 @@ def create_project_stage(project_id):
     db.session.commit()
     return jsonify({'id': stage.id}), 201
 
-@projects_bp.route('/<int:project_id>/stages', methods=['GET'])
-@jwt_required()
-def get_project_stages(project_id):
-    stages = ProjectStage.query.filter_by(project_id=project_id).order_by(ProjectStage.sequence).all()
-    return jsonify([{
-        'id': s.id,
-        'title': s.title,
-        'status': s.status,
-        'deadline': s.deadline.isoformat() if s.deadline else None,
-        'sequence': s.sequence
-    } for s in stages])
-
 @projects_bp.route('/<int:project_id>/stages/<int:stage_id>', methods=['PATCH'])
 @jwt_required()
 def update_project_stage(project_id, stage_id):
+    """Обновление данных этапа проекта (доступно только администратору)."""
+    current_user_id = int(get_jwt_identity())
+    if not is_admin(current_user_id):
+        return jsonify({"error": "Требуются права администратора"}), 403
+    
     data = request.get_json()
     stage = ProjectStage.query.filter_by(id=stage_id, project_id=project_id).first_or_404()
     
@@ -276,9 +265,66 @@ def update_project_stage(project_id, stage_id):
     db.session.commit()
     return jsonify({'message': 'Этап обновлен'})
 
+@projects_bp.route('/', methods=['GET'])
+@jwt_required()
+def get_projects():
+    """Получение списка проектов, в которых участвует текущий пользователь."""
+    current_user_id = int(get_jwt_identity())
+    projects = Project.query.join(ProjectMember).filter(
+        ProjectMember.user_id == current_user_id
+    ).all()
+    
+    return jsonify([{
+        'id': p.id,
+        'title': p.title,
+        'description': p.description,
+        'created_by': p.created_by,
+        'deadline': p.deadline.isoformat() if p.deadline else None,
+        'is_archived': p.is_archived
+    } for p in projects])
+
+@projects_bp.route('/<int:project_id>/members', methods=['GET'])
+@jwt_required()
+def get_project_members(project_id):
+    """Получение списка участников проекта (доступно участникам проекта)."""
+    current_user_id = int(get_jwt_identity())
+    if not ProjectMember.query.filter_by(
+        user_id=current_user_id,
+        project_id=project_id
+    ).first():
+        return jsonify({'error': 'Доступ закрыт'}), 403
+    
+    members = ProjectMember.query.filter_by(project_id=project_id).all()
+    return jsonify([{
+        'user_id': m.user_id,
+        'username': m.user.username,
+        'full_name': m.user.full_name
+    } for m in members])
+
+@projects_bp.route('/<int:project_id>/stages', methods=['GET'])
+@jwt_required()
+def get_project_stages(project_id):
+    """Получение списка этапов проекта (доступно участникам проекта)."""
+    current_user_id = int(get_jwt_identity())
+    if not ProjectMember.query.filter_by(
+        user_id=current_user_id,
+        project_id=project_id
+    ).first():
+        return jsonify({'error': 'Доступ закрыт'}), 403
+    
+    stages = ProjectStage.query.filter_by(project_id=project_id).order_by(ProjectStage.sequence).all()
+    return jsonify([{
+        'id': s.id,
+        'title': s.title,
+        'status': s.status,
+        'deadline': s.deadline.isoformat() if s.deadline else None,
+        'sequence': s.sequence
+    } for s in stages])
+
 @projects_bp.route('/dashboard', methods=['GET'])
 @jwt_required()
 def get_dashboard():
+    """Получение данных для дашборда (доступно любому авторизованному пользователю)."""
     current_user_id = int(get_jwt_identity())
     
     projects = Project.query.join(ProjectMember).filter(
@@ -304,7 +350,7 @@ def get_dashboard():
         for stage in stages:
             tasks = Task.query.filter_by(stage_id=stage.id).all()
             total_tasks += len(tasks)
-            completed_tasks += sum(1 for task in tasks if task.is_completed)
+            completed_tasks = sum(1 for task in tasks if task.is_completed)
         
         dashboard_data['projects'].append({
             'id': project.id,
@@ -321,6 +367,7 @@ def get_dashboard():
 @projects_bp.route('/roles', methods=['GET'])
 @jwt_required()
 def get_roles():
+    """Получение списка всех ролей (доступно любому авторизованному пользователю)."""
     roles = Role.query.all()
     return jsonify([{
         'id': r.id,
