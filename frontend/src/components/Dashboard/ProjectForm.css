@@ -1,50 +1,106 @@
 .project-form-container {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 20px;
 }
 
 .project-form-container h3 {
-  margin: 0 0 10px;
+  margin: 0;
   color: #2c3e50;
+  font-size: 22px;
+  font-weight: 600;
 }
 
 .project-form-container form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
 }
 
 .project-form-container label {
-  font-weight: bold;
+  font-weight: 600;
   color: #34495e;
+  font-size: 14px;
+  margin-bottom: 4px;
 }
 
 .project-form-container input,
 .project-form-container textarea {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 12px;
+  border: 1px solid #dfe4ea;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: border-color 0.2s;
 }
 
-.project-form-container textarea {
-  min-height: 100px;
+.project-form-container input:focus,
+.project-form-container textarea:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+.project-form-container .description-textarea {
+  min-height: 80px;
+  max-height: 200px;
+  resize: vertical;
+}
+
+.project-form-container .deadline-input {
+  padding: 14px;
 }
 
 .project-form-container button {
-  padding: 10px;
+  padding: 12px;
   background: #3498db;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background 0.2s, transform 0.2s;
 }
 
 .project-form-container button:hover {
   background: #2980b9;
+  transform: translateY(-2px);
+}
+
+.members-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.members-table th,
+.members-table td {
+  border: 1px solid #dfe4ea;
+  padding: 12px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.members-table th {
+  background: #f9f9f9;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.members-table tr {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.members-table tr.selected {
+  background: #e6f3ff;
+}
+
+.members-table tr:hover {
+  background: #f0f7ff;
 }
 
 .error-message {
   color: #e74c3c;
+  font-size: 14px;
 }

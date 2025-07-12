@@ -1,10 +1,15 @@
 import React from 'react';
 import './ProjectCards.css';
 
-const ProjectCards = ({ projects, onOpenDetails, onArchive, onOpenRaci }) => {
+const ProjectCards = ({ projects, onOpenDetails, onArchive, onOpenRaci, isAdmin }) => {
+  // Сортировка: незархивированные проекты вверху, заархивированные внизу
+  const sortedProjects = [...projects].sort((a, b) => (a.is_archived ? 1 : 0) - (b.is_archived ? 1 : 0));
+
   const handleCardClick = (e, project) => {
     e.stopPropagation();
-    onOpenDetails(project);
+    if (!project.is_archived) {
+      onOpenRaci(project.id);
+    }
   };
 
   const handleArchiveClick = (e, projectId) => {
@@ -17,9 +22,14 @@ const ProjectCards = ({ projects, onOpenDetails, onArchive, onOpenRaci }) => {
     onOpenRaci(projectId);
   };
 
+  const handleEditClick = (e, project) => {
+    e.stopPropagation();
+    onOpenDetails(project);
+  };
+
   return (
     <div className="project-cards">
-      {projects.map(project => (
+      {sortedProjects.map(project => (
         <div
           key={project.id}
           className="project-card"
@@ -31,13 +41,21 @@ const ProjectCards = ({ projects, onOpenDetails, onArchive, onOpenRaci }) => {
             <p><strong>Дедлайн:</strong> {project.deadline || 'Не указан'}</p>
             <p><strong>Статус:</strong> {project.is_archived ? 'Заархивирован' : 'Активен'}</p>
           </div>
-          {!project.is_archived && (
-            <button
-              className="archive-button"
-              onClick={(e) => handleArchiveClick(e, project.id)}
-            >
-              Архивировать
-            </button>
+          {isAdmin && !project.is_archived && (
+            <>
+              <button
+                className="archive-button"
+                onClick={(e) => handleArchiveClick(e, project.id)}
+              >
+                Архивировать
+              </button>
+              <button
+                className="edit-button"
+                onClick={(e) => handleEditClick(e, project)}
+              >
+                Изменить
+              </button>
+            </>
           )}
           <button
             className="raci-button"
