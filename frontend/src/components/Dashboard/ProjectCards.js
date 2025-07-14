@@ -1,40 +1,67 @@
 import React from 'react';
 import './ProjectCards.css';
 
-const ProjectCards = ({ projects, onOpenDetails, onDelete }) => {
-  console.log('ProjectCards: Рендеринг проектов:', projects);
+const ProjectCards = ({ projects, onOpenDetails, onArchive, onOpenRaci, isAdmin }) => {
+  // Сортировка: незархивированные проекты вверху, заархивированные внизу
+  const sortedProjects = [...projects].sort((a, b) => (a.is_archived ? 1 : 0) - (b.is_archived ? 1 : 0));
 
   const handleCardClick = (e, project) => {
     e.stopPropagation();
-    console.log('ProjectCards: Клик по карточке:', project);
-    onOpenDetails(project);
+    if (!project.is_archived) {
+      onOpenRaci(project.id);
+    }
   };
 
-  const handleDeleteClick = (e, projectId) => {
+  const handleArchiveClick = (e, projectId) => {
     e.stopPropagation();
-    console.log('ProjectCards: Удаление проекта:', projectId);
-    onDelete(projectId);
+    onArchive(projectId);
+  };
+
+  const handleRaciClick = (e, projectId) => {
+    e.stopPropagation();
+    onOpenRaci(projectId);
+  };
+
+  const handleEditClick = (e, project) => {
+    e.stopPropagation();
+    onOpenDetails(project);
   };
 
   return (
     <div className="project-cards">
-      {projects.map(project => (
+      {sortedProjects.map(project => (
         <div
           key={project.id}
           className="project-card"
           onClick={(e) => handleCardClick(e, project)}
         >
-          <h3 className="project-title">{project.name || 'Без названия'}</h3>
+          <h3 className="project-title">{project.title}</h3>
           <div className="project-details">
-            <p><strong>Фаза:</strong> {project.phases?.[0]?.name || 'Не указана'}</p>
-            <p><strong>Этап:</strong> {project.phases?.[0]?.stages?.[0] || 'Не указан'}</p>
-            <p><strong>Окончание фазы:</strong> {project.phases?.[0]?.phaseEndDate || 'Не указана'}</p>
+            <p><strong>Описание:</strong> {project.description || 'Без описания'}</p>
+            <p><strong>Дедлайн:</strong> {project.deadline || 'Не указан'}</p>
+            <p><strong>Статус:</strong> {project.is_archived ? 'Заархивирован' : 'Активен'}</p>
           </div>
+          {isAdmin && !project.is_archived && (
+            <>
+              <button
+                className="archive-button"
+                onClick={(e) => handleArchiveClick(e, project.id)}
+              >
+                Архивировать
+              </button>
+              <button
+                className="edit-button"
+                onClick={(e) => handleEditClick(e, project)}
+              >
+                Изменить
+              </button>
+            </>
+          )}
           <button
-            className="delete-button"
-            onClick={(e) => handleDeleteClick(e, project.id)}
+            className="raci-button"
+            onClick={(e) => handleRaciClick(e, project.id)}
           >
-            Удалить
+            RACI
           </button>
         </div>
       ))}

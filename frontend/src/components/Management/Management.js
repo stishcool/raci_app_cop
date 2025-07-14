@@ -1,88 +1,159 @@
 import React, { useState } from 'react';
-import { getUsers } from '../../api/auth';
+import { createUser } from '../../api/projects';
 import './Management.css';
 
-const Management = () => {
-  const [users, setUsers] = useState(getUsers());
-  const [newUser, setNewUser] = useState({ name: '', position: '', role: 'I', email: '', password: '', phone: '', description: '' });
+const Management = ({ user }) => {
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+    full_name: '',
+    phone: '',
+    email: '',
+    is_active: true,
+  });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  console.log('Management: Рендеринг, пользователи:', users);
+  const validateEmail = (email) => {
+    if (!email) return true;
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
 
-  const handleAddUser = () => {
-    if (!newUser.name || !newUser.position || !newUser.email) {
-      console.warn('Management: Не заполнены обязательные поля');
-      alert('Заполните обязательные поля: ФИО, Должность, Email');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setIsLoading(true);
+
+    if (!formData.username || formData.username.length < 3) {
+      setError('Имя пользователя должно быть ≥3 символов');
+      setIsLoading(false);
       return;
     }
-    const newId = users.length + 1;
-    setUsers([...users, { id: newId, ...newUser, is_admin: false }]);
-    setNewUser({ name: '', position: '', role: 'I', email: '', password: '', phone: '', description: '' });
-    console.log('Management: Пользователь добавлен:', { id: newId, ...newUser });
+    if (!formData.password || formData.password.length < 6) {
+      setError('Пароль должен быть ≥6 символов');
+      setIsLoading(false);
+      return;
+    }
+    if (!formData.full_name || formData.full_name.length < 2) {
+      setError('ФИО должно быть ≥2 символов');
+      setIsLoading(false);
+      return;
+    }
+    if (formData.email && !validateEmail(formData.email)) {
+      setError('Некорректный формат email');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await createUser({
+        username: formData.username,
+        password: formData.password,
+        full_name: formData.full_name,
+        phone: formData.phone || null,
+        email: formData.email || null,
+        is_active: formData.is_active,
+      });
+      setSuccess(response.message || 'Пользователь успешно создан');
+      setFormData({
+        username: '',
+        password: '',
+        full_name: '',
+        phone: '',
+        email: '',
+        is_active: true,
+      });
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (!user?.positions?.includes('Администратор')) {
+    return <div>Доступ запрещен</div>;
+  }
 
   return (
     <div className="management-container">
-      <h2>Управление пользователями</h2>
-      <p>Тест: Эта страница должна отображаться</p>
-      <div className="management-content">
-        <h3>Добавить пользователя</h3>
-        <input
-          type="text"
-          placeholder="ФИО"
-          value={newUser.name}
-          onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-        />
-        <input
-          type="text"
-          placeholder="Должность"
-          value={newUser.position}
-          onChange={(e) => setNewUser({ ...newUser, position: e.target.value })}
-        />
-        <select
-          value={newUser.role}
-          onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-        >
-          <option value="R">Responsible</option>
-          <option value="A">Accountable</option>
-          <option value="C">Consulted</option>
-          <option value="I">Informed</option>
-        </select>
-        <input
-          type="email"
-          placeholder="Email"
-          value={newUser.email}
-          onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-        />
-        <input
-          type="password"
-          placeholder="Пароль"
-          value={newUser.password}
-          onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-        />
-        <input
-          type="text"
-          placeholder="Телефон"
-          value={newUser.phone}
-          onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
-        />
-        <input
-          type="text"
-          placeholder="Описание"
-          value={newUser.description}
-          onChange={(e) => setNewUser({ ...newUser, description: e.target.value })}
-        />
-        <button onClick={handleAddUser}>Добавить</button>
-        <h3>Список пользователей</h3>
-        {users.length === 0 ? (
-          <p>Нет пользователей</p>
-        ) : (
-          <ul>
-            {users.map(user => (
-              <li key={user.id}>{user.name} ({user.position}, {user.role})</li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <h2>Управление</h2>
+      <h3>Создать пользователя</h3>
+      {error && <div className="error-message">{error}</div>}
+      {success && <div className="success-message">{success}</div>}
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>Имя пользователя</label>
+          <input
+            type="text"
+            value={formData.username}
+            onChange={(e) => setFormData({ ...formData, username: e.target.value.trim() })}
+            placeholder="Имя пользователя"
+            maxLength={50}
+            disabled={isLoading}
+          />
+        </div>
+        <div>
+          <label>Пароль</label>
+          <input
+            type="password"
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            placeholder="Пароль"
+            maxLength={50}
+            disabled={isLoading}
+          />
+        </div>
+        <div>
+          <label>ФИО</label>
+          <input
+            type="text"
+            value={formData.full_name}
+            onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+            placeholder="ФИО"
+            maxLength={100}
+            disabled={isLoading}
+          />
+        </div>
+        <div>
+          <label>Телефон</label>
+          <input
+            type="text"
+            value={formData.phone}
+            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            placeholder="Телефон"
+            maxLength={20}
+            disabled={isLoading}
+          />
+        </div>
+        <div>
+          <label>Email</label>
+          <input
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value.trim() })}
+            placeholder="Email"
+            maxLength={100}
+            disabled={isLoading}
+          />
+        </div>
+        <div>
+          <label>
+            <input
+              type="checkbox"
+              checked={formData.is_active}
+              onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+              disabled={isLoading}
+            />
+            Активен
+          </label>
+        </div>
+        <button type="submit" disabled={isLoading}>
+          {isLoading ? 'Создание...' : 'Создать'}
+        </button>
+      </form>
     </div>
   );
 };

@@ -268,6 +268,7 @@ def update_project_stage(project_id, stage_id):
 @projects_bp.route('/', methods=['GET'])
 @jwt_required()
 def get_projects():
+
     """Получение списка проектов, в которых участвует текущий пользователь."""
     current_user_id = int(get_jwt_identity())
     projects = Project.query.join(ProjectMember).filter(
@@ -285,6 +286,7 @@ def get_projects():
 
 @projects_bp.route('/<int:project_id>/members', methods=['GET'])
 @jwt_required()
+
 def get_project_members(project_id):
     """Получение списка участников проекта (доступно участникам проекта)."""
     current_user_id = int(get_jwt_identity())
@@ -323,6 +325,7 @@ def get_project_stages(project_id):
 
 @projects_bp.route('/dashboard', methods=['GET'])
 @jwt_required()
+
 def get_dashboard():
     """Получение данных для дашборда (доступно любому авторизованному пользователю)."""
     current_user_id = int(get_jwt_identity())
@@ -366,6 +369,7 @@ def get_dashboard():
 
 @projects_bp.route('/roles', methods=['GET'])
 @jwt_required()
+
 def get_roles():
     """Получение списка всех ролей (доступно любому авторизованному пользователю)."""
     roles = Role.query.all()

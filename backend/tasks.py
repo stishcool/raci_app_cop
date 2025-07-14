@@ -153,6 +153,7 @@ def create_task():
 @tasks_bp.route('/', methods=['GET'])
 @jwt_required()
 def get_tasks():
+
     """Получение списка задач (доступно участникам проекта)."""
     stage_id = request.args.get('stage_id')
     project_id = request.args.get('project_id')
@@ -170,6 +171,7 @@ def get_tasks():
         project_id=project_id
     ).first():
         return jsonify({'error': 'Доступ закрыт'}), 403
+
     
     tasks = query.all()
     return jsonify([{
@@ -205,6 +207,7 @@ def get_task_raci(task_id):
 @tasks_bp.route('/<int:task_id>/status', methods=['PATCH'])
 @jwt_required()
 def update_task_status(task_id):
+
     """Обновление статуса задачи (доступно ответственному за этап или администратору)."""
     data = request.get_json()
     task = Task.query.get_or_404(task_id)
@@ -234,12 +237,13 @@ def update_task_status(task_id):
     
     if 'is_completed' in data:
         task.is_completed = data['is_completed']
-    
+   
     db.session.commit()
     return jsonify({'message': 'Статус задачи обновлен'})
 
 @tasks_bp.route('/<int:task_id>/dependencies', methods=['GET'])
 @jwt_required()
+
 def get_task_dependencies(task_id):
     """Получение списка зависимостей задачи (доступно участникам проекта)."""
     task = Task.query.get_or_404(task_id)

@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+
 from models import db, User, AuditLog, Position, UserPosition
 from werkzeug.security import generate_password_hash
 from sqlalchemy.exc import IntegrityError
@@ -37,6 +38,7 @@ def is_admin(user_id):
 @admin_bp.route('/users', methods=['GET'])
 @jwt_required()
 def get_users():
+
     """Получение списка всех пользователей (только для администраторов)."""
     current_user_id = int(get_jwt_identity())
     if not is_admin(current_user_id):
@@ -54,6 +56,7 @@ def get_users():
 
 @admin_bp.route('/users', methods=['POST'])
 @jwt_required()
+
 def add_user():
     """Создание нового пользователя (только для администраторов)."""
     current_user_id = int(get_jwt_identity())

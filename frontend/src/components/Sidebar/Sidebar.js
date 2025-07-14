@@ -2,18 +2,22 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './Sidebar.css';
 
-const Sidebar = ({ tabs, user }) => {
+const Sidebar = ({ user }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isAdmin = user?.positions?.includes('Администратор');
+  const tabs = isAdmin
+    ? ['Дашборд', 'Управление', 'Уведомления', 'Профиль']
+    : ['Дашборд', 'Уведомления', 'Профиль'];
 
   console.log('Sidebar: Рендеринг, текущий путь:', location.pathname, 'вкладки:', tabs, 'пользователь:', user);
 
   const getRoute = (tab) => {
     const routeMap = {
-      'Дашборд': user.is_admin ? '/admin' : '/',
-      'Управление': user.is_admin ? '/admin/management' : '/management',
-      'Уведомления': user.is_admin ? '/admin/notifications' : '/notifications',
-      'Профиль': user.is_admin ? '/admin/profile' : '/profile'
+      Дашборд: isAdmin ? '/admin' : '/',
+      Управление: '/admin/management',
+      Уведомления: isAdmin ? '/admin/notifications' : '/notifications',
+      Профиль: isAdmin ? '/admin/profile' : '/profile',
     };
     const route = routeMap[tab] || '/';
     console.log('Sidebar: Сгенерирован маршрут для вкладки', tab, ':', route);
@@ -23,10 +27,10 @@ const Sidebar = ({ tabs, user }) => {
   return (
     <div className="sidebar">
       <div className="user-info">
-        <h3>{user?.name || 'Неизвестный пользователь'}</h3>
-        <p>{user?.position || 'Нет должности'}</p>
+        <h3>{user?.full_name || 'Неизвестный пользователь'}</h3>
+        <p>{user?.positions?.[0] || 'Нет должности'}</p>
       </div>
-      {tabs.map(tab => (
+      {tabs.map((tab) => (
         <button
           key={tab}
           className={location.pathname === getRoute(tab) ? 'active' : ''}
