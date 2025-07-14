@@ -39,3 +39,18 @@ export const getUsers = async () => {
     throw new Error(error.response?.data?.error || 'Ошибка получения пользователей');
   }
 };
+
+export const createUser = async (userData) => {
+  const token = localStorage.getItem('token');
+  if (!token) throw new Error('Не авторизован');
+  try {
+    const response = await axios.post(`${API_URL}/admin/users`, userData, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    const errMsg = error.response?.data?.error || 'Ошибка создания пользователя';
+    const details = error.response?.data?.details || null;
+    throw new Error(details ? `${errMsg}: ${JSON.stringify(details)}` : errMsg);
+  }
+};
