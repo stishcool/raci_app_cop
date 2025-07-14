@@ -37,13 +37,13 @@ class User(db.Model):
     @validates('username')
     def validate_username(self, key, username):
         if not username or len(username) < 3:
-            raise ValueError('Username must be at least 3 characters long')
+            raise ValueError('Имя пользователя должно быть длиннее 3 символов')
         return username
     
     @validates('phone')
     def validate_phone(self, key, phone):
         if phone and not phone.replace('+', '').isdigit():
-            raise ValueError('Phone must contain only digits and an optional "+"')
+            raise ValueError('Телефон может содержать только цифры и "+"')
         return phone
     
     projects = relationship(
@@ -141,7 +141,7 @@ class Project(db.Model):
     __tablename__ = 'project'
     
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
+    title = db.Column(db.String(100), nullable=False, unique=True)
     description = db.Column(db.Text)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     deadline = db.Column(db.DateTime)
@@ -154,6 +154,7 @@ class Project(db.Model):
     
     __table_args__ = (
         Index('idx_project_creator', 'created_by'),
+        Index('idx_project_title', 'title')
     )
 
 class ProjectStage(db.Model):
@@ -192,6 +193,7 @@ class Task(db.Model):
     description = db.Column(db.Text)
     priority = db.Column(TaskPriority)
     is_completed = db.Column(db.Boolean, default=False)
+    deadline = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -292,4 +294,18 @@ class AuditLog(db.Model):
         Index('idx_audit_entity', 'entity_type', 'entity_id'),
         Index('idx_audit_user', 'user_id'),
         Index('idx_audit_timestamp', 'timestamp'),
+    )
+    
+class TaskDependency(db.Model):
+    """Зависимости между задачами"""
+    __tablename__ = 'task_dependency'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
+    depends_on_task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
+    
+    __table_args__ = (
+        Index('idx_task_dependency_task', 'task_id'),
+        Index('idx_task_dependency_depends_on', 'depends_on_task_id'),
+        db.UniqueConstraint('task_id', 'depends_on_task_id', name='uq_task_dependency')
     )
