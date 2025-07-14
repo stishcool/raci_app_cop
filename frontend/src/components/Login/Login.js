@@ -21,7 +21,7 @@ const Login = ({ setUser }) => {
       return;
     }
 
-    if (password.length < 5) {
+    if (password.length < 6) {
       setError('Пароль должен быть не менее 6 символов');
       setIsLoading(false);
       return;

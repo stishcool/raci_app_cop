@@ -2,12 +2,15 @@ import axios from 'axios';
 import { API_URL } from './config';
 
 export const login = async (username, password) => {
+  console.log('Login request:', { username, password, url: `${API_URL}/auth/login` });
   try {
     const response = await axios.post(`${API_URL}/auth/login`, { username, password });
+    console.log('Login response:', response.data);
     const { access_token } = response.data;
     localStorage.setItem('token', access_token);
     return true;
   } catch (error) {
+    console.error('Login error:', error.response?.data, error.message);
     throw new Error(error.response?.data?.error || 'Ошибка авторизации');
   }
 };
