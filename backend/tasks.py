@@ -284,3 +284,17 @@ def update_task_dependencies(task_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "Внутренняя ошибка", "details": str(e)}), 500
+    
+@tasks_bp.route('/<int:task_id>', methods=['DELETE'])
+@jwt_required()
+def delete_task(task_id):
+    current_user_id = int(get_jwt_identity())
+    task = Task.query.get_or_404(task_id)
+    stage = ProjectStage.query.get(task.stage_id)
+    if not is_admin(current_user_id):
+        accountable_role = Role.query.filter_by(title='A').first()
+        if not RACIAssignment.query.filter_by(task_id=task.id, user_id=current_user_id, role_id=accountable_role.id).first():
+            return jsonify({'error': 'Только ответственный или админ могут удалять задачи'}), 403
+    db.session.delete(task)
+    db.session.commit()
+    return jsonify({'message': f'Задача {task.title} удалена'})

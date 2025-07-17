@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, Project, ProjectMember, User, ProjectStage, Task, Notification, AuditLog, Role
+from models import db, Project, ProjectMember, User, ProjectStage, Task, Notification, AuditLog, Role, RACIAssignment
 from datetime import datetime
 from marshmallow import Schema, fields, validate, ValidationError
 from admin import is_admin
@@ -362,3 +362,48 @@ def get_roles():
         'title': r.title,
         'is_custom': r.is_custom
     } for r in roles])
+    
+@projects_bp.route('/<int:project_id>', methods=['DELETE'])
+@jwt_required()
+def delete_project(project_id):
+    current_user_id = int(get_jwt_identity())
+    project = Project.query.get_or_404(project_id)
+    if not is_admin(current_user_id) and project.created_by != current_user_id:
+        return jsonify({'error': 'Только админ или руководитель проекта может удалять проект'}), 403
+    try:
+        stages = ProjectStage.query.filter_by(project_id=project_id).all()
+        for stage in stages:
+            tasks = Task.query.filter_by(stage_id=stage.id).all()
+            for task in tasks:
+                RACIAssignment.query.filter_by(task_id=task.id).delete()
+                db.session.delete(task)
+            db.session.delete(stage)
+        ProjectMember.query.filter_by(project_id=project_id).delete()
+        db.session.delete(project)
+        db.session.commit()
+        return jsonify({'message': f'Проект {project.title} удален'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Внутренняя ошибка', 'details': str(e)}), 500
+    
+@projects_bp.route('/<int:project_id>/stages/<int:stage_id>', methods=['DELETE'])
+@jwt_required()
+def delete_stage(project_id, stage_id):
+    current_user_id = int(get_jwt_identity())
+    project = Project.query.get_or_404(project_id)
+    stage = ProjectStage.query.get_or_404(stage_id)
+    if stage.project_id != project_id:
+        return jsonify({'error': 'Этап не принадлежит проекту'}), 400
+    if not is_admin(current_user_id) and project.created_by != current_user_id:
+        return jsonify({'error': 'Только админ или руководитель проекта может удалять этапы'}), 403
+    try:
+        tasks = Task.query.filter_by(stage_id=stage_id).all()
+        for task in tasks:
+            RACIAssignment.query.filter_by(task_id=task.id).delete()
+            db.session.delete(task)
+        db.session.delete(stage)
+        db.session.commit()
+        return jsonify({'message': f'Этап {stage.title} удален'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Внутренняя ошибка', 'details': str(e)}), 500
