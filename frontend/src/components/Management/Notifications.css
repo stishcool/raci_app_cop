@@ -1,0 +1,22 @@
+.notifications-container {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #fff;
+}
+
+.notifications-container h2 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+}
+
+.notifications-list {
+  list-style: none;
+  padding: 0;
+}
+
+.notifications-list li {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  color: #2c3e50;
+}

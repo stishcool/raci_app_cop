@@ -4,6 +4,7 @@ from datetime import datetime
 
 app = create_app()
 with app.app_context():
+
     admin_position = Position.query.filter_by(title='Администратор').first()
     if not admin_position:
         admin_position = Position(

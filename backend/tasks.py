@@ -93,6 +93,7 @@ def get_tasks():
     
     if project_id and not ProjectMember.query.filter_by(user_id=current_user_id, project_id=project_id).first():
         return jsonify({'error': 'Доступ закрыт'}), 403
+
     
     tasks = query.all()
     return jsonify([{
@@ -235,6 +236,7 @@ def update_task_status(task_id):
 
 @tasks_bp.route('/<int:task_id>/dependencies', methods=['GET'])
 @jwt_required()
+
 def get_task_dependencies(task_id):
     task = Task.query.get_or_404(task_id)
     current_user_id = int(get_jwt_identity())

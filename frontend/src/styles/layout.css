@@ -1,0 +1,11 @@
+.app-container {
+  display: flex;
+}
+
+.main-content {
+  margin-left: 270px;
+  padding: 20px;
+  width: calc(100% - 270px);
+  min-height: 100vh;
+  background: #fff;
+}

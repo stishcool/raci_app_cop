@@ -1,0 +1,214 @@
+.raci-matrix {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.raci-matrix h3 {
+  color: #2c3e50;
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.raci-matrix .stage-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.raci-matrix .stage-select,
+.raci-matrix .stage-title-input {
+  padding: 10px;
+  border: 1px solid #dfe4ea;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.raci-matrix .stage-select:focus,
+.raci-matrix .stage-title-input:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+.raci-matrix .stage-controls button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.raci-matrix .save-button {
+  background: #2ecc71;
+  color: white;
+}
+
+.raci-matrix .save-button:hover {
+  background: #27ae60;
+  transform: translateY(-2px);
+}
+
+.raci-matrix .edit-button {
+  background: #3498db;
+  color: white;
+}
+
+.raci-matrix .edit-button:hover {
+  background: #2980b9;
+  transform: translateY(-2px);
+}
+
+.raci-matrix .add-stage-button {
+  background: #3498db;
+  color: white;
+}
+
+.raci-matrix .add-stage-button:hover {
+  background: #2980b9;
+  transform: translateY(-2px);
+}
+
+.raci-matrix .delete-stage-button {
+  background: #ff4d4f;
+  color: white;
+}
+
+.raci-matrix .delete-stage-button:hover {
+  background: #e63946;
+  transform: translateY(-2px);
+}
+
+.raci-matrix .action-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.raci-matrix .position-controls,
+.raci-matrix .custom-role-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.raci-matrix .position-select,
+.raci-matrix .custom-role-input {
+  padding: 10px;
+  border: 1px solid #dfe4ea;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.raci-matrix .position-select:focus,
+.raci-matrix .custom-role-input:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+.raci-matrix .add-task-button,
+.raci-matrix .add-position-button,
+.raci-matrix .add-role-button {
+  padding: 10px 16px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.raci-matrix .add-task-button:hover,
+.raci-matrix .add-position-button:hover,
+.raci-matrix .add-role-button:hover {
+  background: #2980b9;
+  transform: translateY(-2px);
+}
+
+.raci-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.raci-table th,
+.raci-table td {
+  border: 1px solid #dfe4ea;
+  padding: 12px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.raci-table th {
+  background: #f9f9f9;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.raci-table .task-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.raci-table .task-title-input {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  font-size: 14px;
+}
+
+.raci-table .task-title-input:disabled {
+  background: transparent;
+}
+
+.raci-table .delete-task-button,
+.raci-table .delete-position-button {
+  background: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.raci-table .delete-task-button:hover,
+.raci-table .delete-position-button:hover {
+  background: #e63946;
+  transform: scale(1.1);
+}
+
+.raci-table .role-select {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.raci-table .role-select:disabled {
+  background: transparent;
+}
+
+.no-data-message {
+  color: #34495e;
+  font-size: 16px;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.error-message {
+  color: #e74c3c;
+  font-size: 14px;
+}

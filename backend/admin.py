@@ -62,6 +62,7 @@ def get_users():
 
 @admin_bp.route('/users', methods=['POST'])
 @jwt_required()
+
 def add_user():
     current_user_id = int(get_jwt_identity())
     if not is_admin(current_user_id):

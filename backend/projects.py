@@ -277,6 +277,7 @@ def get_projects():
 
 @projects_bp.route('/<int:project_id>/members', methods=['GET'])
 @jwt_required()
+
 def get_project_members(project_id):
     current_user_id = int(get_jwt_identity())
     if not ProjectMember.query.filter_by(
@@ -313,6 +314,7 @@ def get_project_stages(project_id):
 
 @projects_bp.route('/dashboard', methods=['GET'])
 @jwt_required()
+
 def get_dashboard():
     current_user_id = int(get_jwt_identity())
     
@@ -355,6 +357,7 @@ def get_dashboard():
 
 @projects_bp.route('/roles', methods=['GET'])
 @jwt_required()
+
 def get_roles():
     roles = Role.query.all()
     return jsonify([{
@@ -362,7 +365,7 @@ def get_roles():
         'title': r.title,
         'is_custom': r.is_custom
     } for r in roles])
-    
+
 @projects_bp.route('/<int:project_id>', methods=['DELETE'])
 @jwt_required()
 def delete_project(project_id):

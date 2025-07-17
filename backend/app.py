@@ -27,6 +27,7 @@ def create_app():
     db.init_app(app)
     jwt = JWTManager(app)
     migrate = Migrate(app, db)  
+
     CORS(app, resources={r"/*": {"origins": "*"}}) #на время тестирования
     #CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://192.168.194.0/24", "http://192.168.194.174:3000"]}})
     
@@ -44,6 +45,7 @@ def create_app():
 
     @app.route("/")
     def helloWorld():
+
         return jsonify({"status": "API is working"})
     
     @app.before_request
@@ -64,4 +66,5 @@ if __name__ == '__main__':
     app = create_app()
     with app.app_context():
         db.create_all() 
+
     app.run(host='0.0.0.0', port=5000, debug=True)
