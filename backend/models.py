@@ -8,7 +8,6 @@ db = SQLAlchemy()
 
 StageStatus = Enum('planned', 'in_progress', 'completed', name='stage_status')
 TaskPriority = Enum('low', 'medium', 'high', name='task_priority')
-RACIRole = Enum('R', 'A', 'C', 'I', name='raci_role')
 NotificationEntity = Enum('project', 'stage', 'task', name='notification_entity')
 
 class User(db.Model):
@@ -46,63 +45,19 @@ class User(db.Model):
             raise ValueError('Телефон может содержать только цифры и "+"')
         return phone
     
-    projects = relationship(
-        'Project', 
-        backref='created_by_user', 
-        foreign_keys='Project.created_by',
-        lazy=True,
-        cascade='all, delete-orphan'
-    )
-    
-    members = relationship(
-        'ProjectMember', 
-        backref='user', 
-        lazy=True, 
-        cascade='all, delete-orphan'
-    )
-    
-    raci_assignments = relationship(
-        'RACIAssignment', 
-        backref='assigned_user', 
-        foreign_keys='RACIAssignment.user_id',
-        lazy=True,
-        cascade='all, delete-orphan'
-    )
-    
-    assigned_raci_assignments = relationship(
-        'RACIAssignment',
-        backref='assigner_user', 
-        foreign_keys='RACIAssignment.assigned_by',
-        lazy=True
-    )
-    
-    notifications = relationship(
-        'Notification', 
-        backref='user', 
-        lazy=True, 
-        cascade='all, delete-orphan'
-    )
-    
-    audit_logs = relationship(
-        'AuditLog', 
-        backref='user', 
-        lazy=True, 
-        cascade='all, delete-orphan'
-    )
-    
-    positions = relationship(
-        'Position',
-        secondary='user_position',
-        backref='users',
-        lazy='dynamic'
-    )
-    
+    projects = relationship('Project', backref='created_by_user', foreign_keys='Project.created_by', lazy=True, cascade='all, delete-orphan')
+    members = relationship('ProjectMember', backref='user', lazy=True, cascade='all, delete-orphan')
+    raci_assignments = relationship('RACIAssignment', backref='assigned_user', foreign_keys='RACIAssignment.user_id', lazy=True, cascade='all, delete-orphan')
+    assigned_raci = relationship('RACIAssignment', backref='assigner_user', foreign_keys='RACIAssignment.assigned_by', lazy=True)
+    notifications = relationship('Notification', backref='user', lazy=True, cascade='all, delete-orphan')
+    audit_logs = relationship('AuditLog', backref='user', lazy=True, cascade='all, delete-orphan')
+    positions = relationship('Position', secondary='user_position', backref='users', lazy='dynamic')
+
 class Position(db.Model):
     __tablename__ = 'position'
     
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False, unique=True)
-    #is_admin = db.Column(db.Boolean, default=False) под вопросом
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class UserPosition(db.Model):
@@ -113,12 +68,9 @@ class UserPosition(db.Model):
     position_id = db.Column(db.Integer, db.ForeignKey('position.id'), nullable=False)
     assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    __table_args__ = (
-        db.UniqueConstraint('user_id', 'position_id', name='uq_user_position'),
-    )
+    __table_args__ = (db.UniqueConstraint('user_id', 'position_id', name='uq_user_position'),)
 
 class Role(db.Model):
-    """Таблица ролей (включая RACI и кастомные)"""
     __tablename__ = 'role'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -127,17 +79,11 @@ class Role(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    raci_assignments = relationship(
-        'RACIAssignment', 
-        backref='role_assignments',  
-        lazy=True, 
-        cascade='all, delete-orphan'
-    )
+    raci_assignments = relationship('RACIAssignment', backref='role', lazy=True, cascade='all, delete-orphan')
     
     __table_args__ = (Index('idx_role_title', 'title'),)
 
 class Project(db.Model):
-    """Основная сущность проекта"""
     __tablename__ = 'project'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -158,7 +104,6 @@ class Project(db.Model):
     )
 
 class ProjectStage(db.Model):
-    """Этапы проекта с RACI-матрицей"""
     __tablename__ = 'project_stage'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -171,12 +116,6 @@ class ProjectStage(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     tasks = relationship('Task', backref='stage', lazy=True, cascade='all, delete-orphan')
-    raci_assignments = relationship(
-        'RACIAssignment', 
-        backref='stage_assignments', 
-        lazy=True, 
-        cascade='all, delete-orphan'
-    )
     
     __table_args__ = (
         Index('idx_stage_project', 'project_id'),
@@ -184,7 +123,6 @@ class ProjectStage(db.Model):
     )
 
 class Task(db.Model):
-    """Задачи этапа"""
     __tablename__ = 'task'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -194,15 +132,15 @@ class Task(db.Model):
     priority = db.Column(TaskPriority)
     is_completed = db.Column(db.Boolean, default=False)
     deadline = db.Column(db.DateTime, nullable=True)
+    depends_on_tasks = db.Column(db.JSON, default=lambda: [], nullable=False)  # Список ID зависимых задач
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    __table_args__ = (
-        Index('idx_task_stage', 'stage_id'),
-    )
+    raci_assignments = relationship('RACIAssignment', backref='task', lazy=True, cascade='all, delete-orphan')
+    
+    __table_args__ = (Index('idx_task_stage', 'stage_id'),)
 
 class ProjectMember(db.Model):
-    """Участники проекта (многие-ко-многим)"""
     __tablename__ = 'project_member'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -211,16 +149,13 @@ class ProjectMember(db.Model):
     added_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    __table_args__ = (
-        Index('idx_member_unique', 'project_id', 'user_id', unique=True),
-    )
+    __table_args__ = (Index('idx_member_unique', 'project_id', 'user_id', unique=True),)
 
 class RACIAssignment(db.Model):
-    """RACI-матрица"""
     __tablename__ = 'raci_assignment'
     
     id = db.Column(db.Integer, primary_key=True)
-    stage_id = db.Column(db.Integer, db.ForeignKey('project_stage.id'), nullable=False)
+    task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'), nullable=False)
     assigned_by = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -229,38 +164,11 @@ class RACIAssignment(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     __table_args__ = (
-        Index('idx_raci_stage_user', 'stage_id', 'user_id', unique=True),
+        Index('idx_raci_task_user', 'task_id', 'user_id', unique=True),
         ForeignKeyConstraint(['assigned_by'], ['user.id'], name='fk_raci_assigned_by'),
-    )
-    
-    user = relationship(
-        'User', 
-        foreign_keys=[user_id],
-        back_populates='raci_assignments',
-        overlaps="assigned_user"
-    )
-    
-    assigner = relationship(
-        'User', 
-        foreign_keys=[assigned_by],
-        back_populates='assigned_raci_assignments',
-        overlaps="assigner_user"
-    )
-    
-    role = relationship(
-        'Role', 
-        backref='raci_role_assignments',  
-        lazy=True
-    )
-    
-    stage = relationship(
-        'ProjectStage', 
-        backref='raci_stage_assignments',  
-        lazy=True
     )
 
 class Notification(db.Model):
-    """Система уведомлений"""
     __tablename__ = 'notification'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -272,12 +180,9 @@ class Notification(db.Model):
     related_entity = db.Column(NotificationEntity)
     related_entity_id = db.Column(db.Integer)
     
-    __table_args__ = (
-        Index('idx_notification_user', 'user_id', 'is_read'),
-    )
+    __table_args__ = (Index('idx_notification_user', 'user_id', 'is_read'),)
 
 class AuditLog(db.Model):
-    """Полноценное логирование действий"""
     __tablename__ = 'audit_log'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -294,18 +199,4 @@ class AuditLog(db.Model):
         Index('idx_audit_entity', 'entity_type', 'entity_id'),
         Index('idx_audit_user', 'user_id'),
         Index('idx_audit_timestamp', 'timestamp'),
-    )
-    
-class TaskDependency(db.Model):
-    """Зависимости между задачами"""
-    __tablename__ = 'task_dependency'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
-    depends_on_task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
-    
-    __table_args__ = (
-        Index('idx_task_dependency_task', 'task_id'),
-        Index('idx_task_dependency_depends_on', 'depends_on_task_id'),
-        db.UniqueConstraint('task_id', 'depends_on_task_id', name='uq_task_dependency')
     )
