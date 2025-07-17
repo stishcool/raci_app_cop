@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, Task, RACIAssignment, ProjectMember, ProjectStage, Role, Notification, Project, User
+from models import db, Task, RACIAssignment, ProjectMember, ProjectStage, Role, User, Notification, Project
 from datetime import datetime
-import pytz  
+import pytz
 from admin import is_admin
 from marshmallow import Schema, fields, validate, ValidationError
 
@@ -51,7 +51,9 @@ def create_task():
             description=data.get('description'),
             priority=data.get('priority', 'medium'),
             is_completed=data.get('is_completed', False),
-            deadline=data.get('deadline')
+            deadline=data.get('deadline'),
+            created_at=datetime.now(pytz.UTC),
+            updated_at=datetime.now(pytz.UTC)
         )
         db.session.add(task)
         db.session.commit()
@@ -132,7 +134,10 @@ def update_task_raci(task_id):
                 task_id=task.id,
                 user_id=assignment['user_id'],
                 role_id=assignment['role_id'],
-                assigned_by=current_user_id
+                assigned_by=current_user_id,
+                assigned_at=datetime.now(pytz.UTC),
+                created_at=datetime.now(pytz.UTC),
+                updated_at=datetime.now(pytz.UTC)
             )
             db.session.add(raci)
         
@@ -158,9 +163,48 @@ def get_task_raci(task_id):
     raci_assignments = RACIAssignment.query.filter_by(task_id=task.id).all()
     return jsonify([{
         'user_id': a.user_id,
-        'username': User.query.get(a.user_id).username, 
-        'role': Role.query.get(a.role_id).title         
+        'username': User.query.get(a.user_id).username,
+        'role': Role.query.get(a.role_id).title
     } for a in raci_assignments])
+
+@tasks_bp.route('/raci_matrix', methods=['GET'])
+@jwt_required()
+def get_raci_matrix():
+    stage_id = request.args.get('stage_id')
+    project_id = request.args.get('project_id')
+    current_user_id = int(get_jwt_identity())
+    
+    if not stage_id and not project_id:
+        return jsonify({'error': 'Необходимо указать stage_id или project_id'}), 400
+    
+    if project_id:
+        if not ProjectMember.query.filter_by(user_id=current_user_id, project_id=project_id).first():
+            return jsonify({'error': 'Доступ закрыт'}), 403
+        tasks = Task.query.join(ProjectStage).filter(ProjectStage.project_id == project_id).all()
+    elif stage_id:
+        stage = ProjectStage.query.get_or_404(stage_id)
+        if not ProjectMember.query.filter_by(user_id=current_user_id, project_id=stage.project_id).first():
+            return jsonify({'error': 'Доступ закрыт'}), 403
+        tasks = Task.query.filter_by(stage_id=stage_id).all()
+    
+    project_id = project_id or stage.project_id
+    users = ProjectMember.query.filter_by(project_id=project_id).join(User).all()
+    
+    matrix = []
+    for task in tasks:
+        row = []
+        raci_assignments = {a.user_id: a.role_id for a in RACIAssignment.query.filter_by(task_id=task.id).all()}
+        for user in users:
+            role_id = raci_assignments.get(user.user_id)
+            role_title = Role.query.get(role_id).title if role_id else ""
+            row.append(role_title)
+        matrix.append(row)
+    
+    return jsonify({
+        'tasks': [{'task_id': t.id, 'title': t.title} for t in tasks],
+        'users': [{'user_id': u.user_id, 'username': u.user.username} for u in users],
+        'matrix': matrix
+    })
 
 @tasks_bp.route('/<int:task_id>/status', methods=['PATCH'])
 @jwt_required()
@@ -242,3 +286,17 @@ def update_task_dependencies(task_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "Внутренняя ошибка", "details": str(e)}), 500
+    
+@tasks_bp.route('/<int:task_id>', methods=['DELETE'])
+@jwt_required()
+def delete_task(task_id):
+    current_user_id = int(get_jwt_identity())
+    task = Task.query.get_or_404(task_id)
+    stage = ProjectStage.query.get(task.stage_id)
+    if not is_admin(current_user_id):
+        accountable_role = Role.query.filter_by(title='A').first()
+        if not RACIAssignment.query.filter_by(task_id=task.id, user_id=current_user_id, role_id=accountable_role.id).first():
+            return jsonify({'error': 'Только ответственный или админ могут удалять задачи'}), 403
+    db.session.delete(task)
+    db.session.commit()
+    return jsonify({'message': f'Задача {task.title} удалена'})

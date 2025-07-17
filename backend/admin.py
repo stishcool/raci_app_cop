@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, User, AuditLog, Position, UserPosition, Role
+from models import db, User, AuditLog, Position, UserPosition, Role, RACIAssignment, ProjectMember
 from werkzeug.security import generate_password_hash
 from sqlalchemy.exc import IntegrityError
 from marshmallow import Schema, fields, validate, ValidationError
@@ -30,6 +30,9 @@ class RoleCreateSchema(Schema):
 
 class PositionCreateSchema(Schema):
     title = fields.Str(required=True, validate=validate.Length(min=1, max=100))
+    
+class UserPositionSchema(Schema):
+    position_id = fields.Int(required=True)
 
 def is_admin(user_id):
     admin_position = Position.query.filter_by(title='Администратор').first()
@@ -252,6 +255,114 @@ def create_position():
     
     except ValidationError as e:
         return jsonify({'error': 'Некорректные данные', 'details': e.messages}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Внутренняя ошибка', 'details': str(e)}), 500
+    
+@admin_bp.route('/users/<int:user_id>/positions', methods=['POST'])
+@jwt_required()
+def add_user_position(user_id):
+    current_user_id = int(get_jwt_identity())
+    if not is_admin(current_user_id):
+        return jsonify({'error': 'Только админ может назначать должности'}), 403
+    try:
+        schema = UserPositionSchema()
+        data = schema.load(request.get_json())
+        user = User.query.get_or_404(user_id)
+        position = Position.query.get_or_404(data['position_id'])
+        if position in user.positions:
+            return jsonify({'error': f'Должность "{position.title}" уже назначена пользователю'}), 400
+        user.positions.append(position)
+        db.session.commit()
+        return jsonify({'message': f'Должность {position.title} добавлена пользователю {user.username}'}), 201
+    except ValidationError as e:
+        return jsonify({'error': 'Некорректные данные', 'details': e.messages}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Внутренняя ошибка', 'details': str(e)}), 500
+    
+@admin_bp.route('/positions', methods=['GET'])
+@jwt_required()
+def get_positions():
+    current_user_id = int(get_jwt_identity())
+    if not is_admin(current_user_id):
+        return jsonify({'error': 'Только админ может просматривать должности'}), 403
+    positions = Position.query.all()
+    return jsonify([{'id': p.id, 'title': p.title, 'created_at': p.created_at.isoformat()} for p in positions])
+
+@admin_bp.route('/users/<int:user_id>/positions/<int:position_id>', methods=['DELETE'])
+@jwt_required()
+def remove_user_position(user_id, position_id):
+    current_user_id = int(get_jwt_identity())
+    if not is_admin(current_user_id):
+        return jsonify({'error': 'Только админ может удалять должности'}), 403
+    try:
+        user = User.query.get_or_404(user_id)
+        position = Position.query.get_or_404(position_id)
+        if position not in user.positions:
+            return jsonify({'error': f'Должность "{position.title}" не назначена пользователю'}), 400
+        user.positions.remove(position)
+        db.session.commit()
+        return jsonify({'message': f'Должность {position.title} удалена у пользователя {user.username}'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Внутренняя ошибка', 'details': str(e)}), 500
+    
+@admin_bp.route('/roles', methods=['GET'])
+@jwt_required()
+def get_roles():
+    current_user_id = int(get_jwt_identity())
+    if not is_admin(current_user_id):
+        return jsonify({'error': 'Только админ может просматривать роли'}), 403
+    roles = Role.query.all()
+    return jsonify([{'id': r.id, 'title': r.title, 'created_at': r.created_at.isoformat(), 'is_custom': r.is_custom,'updated_at': r.updated_at.isoformat()} for r in roles])
+
+@admin_bp.route('/roles/<int:role_id>', methods=['DELETE'])
+@jwt_required()
+def delete_role(role_id):
+    current_user_id = int(get_jwt_identity())
+    if not is_admin(current_user_id):
+        return jsonify({'error': 'Только админ может удалять роли'}), 403
+    try:
+        role = Role.query.get_or_404(role_id)
+        RACIAssignment.query.filter_by(role_id=role_id).delete()
+        db.session.delete(role)
+        db.session.commit()
+        return jsonify({'message': f'Роль {role.title} удалена'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Внутренняя ошибка', 'details': str(e)}), 500
+    
+@admin_bp.route('/positions/<int:position_id>', methods=['DELETE'])
+@jwt_required()
+def delete_position(position_id):
+    current_user_id = int(get_jwt_identity())
+    if not is_admin(current_user_id):
+        return jsonify({'error': 'Только админ может удалять должности'}), 403
+    try:
+        position = Position.query.get_or_404(position_id)
+        db.session.execute(db.delete(UserPosition).where(UserPosition.position_id == position_id))
+        db.session.delete(position)
+        db.session.commit()
+        return jsonify({'message': f'Должность {position.title} удалена'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Внутренняя ошибка', 'details': str(e)}), 500
+    
+@admin_bp.route('/users/<int:user_id>', methods=['DELETE'])
+@jwt_required()
+def delete_user(user_id):
+    current_user_id = int(get_jwt_identity())
+    if not is_admin(current_user_id):
+        return jsonify({'error': 'Только админ может удалять пользователей'}), 403
+    try:
+        user = User.query.get_or_404(user_id)
+        db.session.execute(db.delete(UserPosition).where(UserPosition.user_id == user_id))
+        ProjectMember.query.filter_by(user_id=user_id).delete()
+        RACIAssignment.query.filter_by(user_id=user_id).delete()
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({'message': f'Пользователь {user.username} удален'})
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': 'Внутренняя ошибка', 'details': str(e)}), 500
