@@ -25,7 +25,6 @@ projects_bp = Blueprint('projects', __name__)
 @projects_bp.route('/', methods=['POST'])
 @jwt_required()
 def create_project():
-    """Создание нового проекта (доступно только администратору)."""
     current_user_id = int(get_jwt_identity())
     if not is_admin(current_user_id):
         return jsonify({"error": "Требуются права администратора"}), 403
@@ -73,7 +72,6 @@ def create_project():
 @projects_bp.route('/<int:project_id>', methods=['PATCH'])
 @jwt_required()
 def update_project(project_id):
-    """Обновление данных проекта (доступно только администратору)."""
     current_user_id = int(get_jwt_identity())
     if not is_admin(current_user_id):
         return jsonify({"error": "Требуются права администратора"}), 403
@@ -144,7 +142,6 @@ def update_project(project_id):
 @projects_bp.route('/<int:project_id>/archive', methods=['POST'])
 @jwt_required()
 def archive_project(project_id):
-    """Архивирование проекта (доступно только администратору)."""
     current_user_id = int(get_jwt_identity())
     if not is_admin(current_user_id):
         return jsonify({"error": "Требуются права администратора"}), 403
@@ -157,7 +154,6 @@ def archive_project(project_id):
 @projects_bp.route('/<int:project_id>/members', methods=['POST'])
 @jwt_required()
 def add_project_member(project_id):
-    """Добавление пользователя в проект (доступно только администратору)."""
     current_user_id = int(get_jwt_identity())
     if not is_admin(current_user_id):
         return jsonify({"error": "Требуются права администратора"}), 403
@@ -211,7 +207,6 @@ def add_project_member(project_id):
 @projects_bp.route('/<int:project_id>/members/<int:user_id>', methods=['DELETE'])
 @jwt_required()
 def remove_project_member(project_id, user_id):
-    """Удаление пользователя из проекта (доступно только администратору)."""
     current_user_id = int(get_jwt_identity())
     if not is_admin(current_user_id):
         return jsonify({"error": "Требуются права администратора"}), 403
@@ -228,7 +223,6 @@ def remove_project_member(project_id, user_id):
 @projects_bp.route('/<int:project_id>/stages', methods=['POST'])
 @jwt_required()
 def create_project_stage(project_id):
-    """Создание нового этапа в проекте (доступно только администратору)."""
     current_user_id = int(get_jwt_identity())
     if not is_admin(current_user_id):
         return jsonify({"error": "Требуются права администратора"}), 403
@@ -248,7 +242,6 @@ def create_project_stage(project_id):
 @projects_bp.route('/<int:project_id>/stages/<int:stage_id>', methods=['PATCH'])
 @jwt_required()
 def update_project_stage(project_id, stage_id):
-    """Обновление данных этапа проекта (доступно только администратору)."""
     current_user_id = int(get_jwt_identity())
     if not is_admin(current_user_id):
         return jsonify({"error": "Требуются права администратора"}), 403
@@ -268,7 +261,6 @@ def update_project_stage(project_id, stage_id):
 @projects_bp.route('/', methods=['GET'])
 @jwt_required()
 def get_projects():
-    """Получение списка проектов, в которых участвует текущий пользователь."""
     current_user_id = int(get_jwt_identity())
     projects = Project.query.join(ProjectMember).filter(
         ProjectMember.user_id == current_user_id
@@ -286,7 +278,6 @@ def get_projects():
 @projects_bp.route('/<int:project_id>/members', methods=['GET'])
 @jwt_required()
 def get_project_members(project_id):
-    """Получение списка участников проекта (доступно участникам проекта)."""
     current_user_id = int(get_jwt_identity())
     if not ProjectMember.query.filter_by(
         user_id=current_user_id,
@@ -304,7 +295,6 @@ def get_project_members(project_id):
 @projects_bp.route('/<int:project_id>/stages', methods=['GET'])
 @jwt_required()
 def get_project_stages(project_id):
-    """Получение списка этапов проекта (доступно участникам проекта)."""
     current_user_id = int(get_jwt_identity())
     if not ProjectMember.query.filter_by(
         user_id=current_user_id,
@@ -324,7 +314,6 @@ def get_project_stages(project_id):
 @projects_bp.route('/dashboard', methods=['GET'])
 @jwt_required()
 def get_dashboard():
-    """Получение данных для дашборда (доступно любому авторизованному пользователю)."""
     current_user_id = int(get_jwt_identity())
     
     projects = Project.query.join(ProjectMember).filter(
@@ -367,7 +356,6 @@ def get_dashboard():
 @projects_bp.route('/roles', methods=['GET'])
 @jwt_required()
 def get_roles():
-    """Получение списка всех ролей (доступно любому авторизованному пользователю)."""
     roles = Role.query.all()
     return jsonify([{
         'id': r.id,

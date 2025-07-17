@@ -13,7 +13,6 @@ class UserUpdateSchema(Schema):
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    """Авторизация пользователя. Принимает имя пользователя и пароль, возвращает JWT-токен."""
     data = request.get_json()
     user = User.query.filter_by(username=data['username']).first()
     
@@ -26,7 +25,6 @@ def login():
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required()
 def get_current_user():
-    """Возвращает данные текущего авторизованного пользователя (ID, имя, email, должности)."""
     user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
     return jsonify({
@@ -40,7 +38,6 @@ def get_current_user():
 @auth_bp.route('/me', methods=['PATCH'])
 @jwt_required()
 def update_current_user():
-    """Обновляет данные текущего пользователя (имя, телефон, email)."""
     user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
 

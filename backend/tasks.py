@@ -1,33 +1,12 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, Task, RACIAssignment, ProjectMember, ProjectStage, Role, Notification, TaskDependency
+from models import db, Task, RACIAssignment, ProjectMember, ProjectStage, Role, Notification, Project, User
 from datetime import datetime
+import pytz  
 from admin import is_admin
 from marshmallow import Schema, fields, validate, ValidationError
-from sqlalchemy.sql import func
-from datetime import timedelta
 
 tasks_bp = Blueprint('tasks', __name__)
-
-class TaskDependencySchema(Schema):
-    dependencies = fields.List(fields.Str(), allow_none=True)  
-    
-def check_cyclic_dependency(task_id, depends_on_task_id, db_session):
-    """Проверка на циклические зависимости с помощью рекурсивного поиска."""
-    visited = set()
-    def has_cycle(current_task_id, target_task_id):
-        if current_task_id in visited:
-            return False
-        visited.add(current_task_id)
-        dependencies = TaskDependency.query.filter_by(task_id=current_task_id).all()
-        for dep in dependencies:
-            if dep.depends_on_task_id == target_task_id:
-                return True
-            if has_cycle(dep.depends_on_task_id, target_task_id):
-                return True
-        return False
-    
-    return has_cycle(depends_on_task_id, task_id)
 
 class TaskCreateSchema(Schema):
     stage_id = fields.Int(required=True)
@@ -35,59 +14,35 @@ class TaskCreateSchema(Schema):
     description = fields.Str(allow_none=True)
     priority = fields.Str(allow_none=True, validate=validate.OneOf(['low', 'medium', 'high']))
     is_completed = fields.Boolean(allow_none=True)
-    deadline = fields.DateTime(allow_none=True, validate=lambda x: x >= datetime.utcnow())
+    deadline = fields.DateTime(allow_none=True, validate=lambda x: x >= datetime.now(pytz.UTC))
 
-@tasks_bp.route('/<int:task_id>/raci', methods=['PUT'])
-@jwt_required()
-def update_task_raci(task_id):
-    """Обновление RACI-матрицы для задачи (доступно ответственному по RACI или администратору)."""
-    current_user_id = int(get_jwt_identity())
-    task = Task.query.get_or_404(task_id)
-    
-    stage = ProjectStage.query.get(task.stage_id)
-    if not ProjectMember.query.filter_by(
-        user_id=current_user_id,
-        project_id=stage.project_id
-    ).first():
-        return jsonify({'error': 'Доступ закрыт'}), 403
-    
-    if not is_admin(current_user_id):
-        if not RACIAssignment.query.filter_by(
-            stage_id=stage.id,
-            user_id=current_user_id,
-            role_id=Role.query.filter_by(title='A').first().id
-        ).first():
-            return jsonify({'error': 'Только руководитель или админ могут изменять RACI'}), 403
-    
-    data = request.get_json()
-    RACIAssignment.query.filter_by(stage_id=stage.id).delete()
-    
-    for assignment in data['assignments']:
-        raci = RACIAssignment(
-            stage_id=stage.id,
-            user_id=assignment['user_id'],
-            role_id=assignment['role_id']
-        )
-        db.session.add(raci)
-    
-    db.session.commit()
-    return jsonify({'message': 'RACI матрица обновлена'})
+class TaskDependencySchema(Schema):
+    dependencies = fields.List(fields.Int(), allow_none=True)
 
-tasks_bp.route('/', methods=['POST'])
+def check_cyclic_dependency(task_id, depends_on_task_id, visited=None):
+    if visited is None:
+        visited = set()
+    if task_id in visited:
+        return False
+    visited.add(task_id)
+    task = Task.query.get(task_id)
+    for dep_id in task.depends_on_tasks:
+        if dep_id == depends_on_task_id:
+            return True
+        if check_cyclic_dependency(dep_id, depends_on_task_id, visited.copy()):
+            return True
+    return False
+
+@tasks_bp.route('/', methods=['POST'])
 @jwt_required()
 def create_task():
-    """Создание новой задачи в этапе проекта (доступно участникам проекта)."""
     current_user_id = int(get_jwt_identity())
-    
     try:
         schema = TaskCreateSchema()
         data = schema.load(request.get_json())
         
         stage = ProjectStage.query.get_or_404(data['stage_id'])
-        if not ProjectMember.query.filter_by(
-            user_id=current_user_id,
-            project_id=stage.project_id
-        ).first():
+        if not ProjectMember.query.filter_by(user_id=current_user_id, project_id=stage.project_id).first():
             return jsonify({'error': 'Доступ закрыт'}), 403
         
         task = Task(
@@ -101,45 +56,16 @@ def create_task():
         db.session.add(task)
         db.session.commit()
         
-        dependencies = Task.query.filter(
-            Task.stage_id == data['stage_id'],
-            Task.id != task.id,
-            Task.is_completed == False,
-            Task.created_at < task.created_at
-        ).all()
-        
-        for dep_task in dependencies:
-            dependency = TaskDependency(
-                task_id=task.id,
-                depends_on_task_id=dep_task.id
-            )
-            db.session.add(dependency)
-        
-        if data.get('deadline'):
+        project = Project.query.get(stage.project_id)
+        if project.created_by != current_user_id:
             notification = Notification(
-                user_id=current_user_id,
-                message=f"Создана задача '{task.title}' с дедлайном {task.deadline.isoformat()}",
+                user_id=project.created_by,
+                message=f"Создана задача '{task.title}' в проекте {project.title}",
                 related_entity='task',
                 related_entity_id=task.id,
-                created_at=datetime.utcnow()
+                created_at=datetime.now(pytz.UTC)
             )
             db.session.add(notification)
-            
-            accountable_users = RACIAssignment.query.filter_by(
-                stage_id=stage.id,
-                role_id=Role.query.filter_by(title='A').first().id
-            ).all()
-            for assignment in accountable_users:
-                if assignment.user_id != current_user_id:
-                    notification = Notification(
-                        user_id=assignment.user_id,
-                        message=f"Создана задача '{task.title}' с дедлайном {task.deadline.isoformat()} в этапе {stage.title}",
-                        related_entity='task',
-                        related_entity_id=task.id,
-                        created_at=datetime.utcnow()
-                    )
-                    db.session.add(notification)
-            
             db.session.commit()
         
         return jsonify({'id': task.id}), 201
@@ -153,22 +79,17 @@ def create_task():
 @tasks_bp.route('/', methods=['GET'])
 @jwt_required()
 def get_tasks():
-    """Получение списка задач (доступно участникам проекта)."""
     stage_id = request.args.get('stage_id')
     project_id = request.args.get('project_id')
     current_user_id = int(get_jwt_identity())
     
     query = Task.query.join(ProjectStage)
-    
     if stage_id:
         query = query.filter(Task.stage_id == stage_id)
     elif project_id:
         query = query.filter(ProjectStage.project_id == project_id)
     
-    if project_id and not ProjectMember.query.filter_by(
-        user_id=current_user_id,
-        project_id=project_id
-    ).first():
+    if project_id and not ProjectMember.query.filter_by(user_id=current_user_id, project_id=project_id).first():
         return jsonify({'error': 'Доступ закрыт'}), 403
     
     tasks = query.all()
@@ -178,148 +99,139 @@ def get_tasks():
         'stage_id': t.stage_id,
         'priority': t.priority,
         'is_completed': t.is_completed,
-        'deadline': t.deadline.isoformat() if t.deadline else None
+        'deadline': t.deadline.isoformat() if t.deadline else None,
+        'depends_on_tasks': t.depends_on_tasks
     } for t in tasks])
+
+@tasks_bp.route('/<int:task_id>/raci', methods=['PUT'])
+@jwt_required()
+def update_task_raci(task_id):
+    current_user_id = int(get_jwt_identity())
+    task = Task.query.get_or_404(task_id)
+    stage = ProjectStage.query.get(task.stage_id)
+    project = Project.query.get(stage.project_id)
+    
+    if not ProjectMember.query.filter_by(user_id=current_user_id, project_id=stage.project_id).first():
+        return jsonify({'error': 'Доступ закрыт'}), 403
+    
+    if not is_admin(current_user_id) and project.created_by != current_user_id:
+        return jsonify({'error': 'Только руководитель проекта или админ могут изменять RACI'}), 403
+    
+    try:
+        data = request.get_json()
+        if not isinstance(data.get('assignments'), list):
+            return jsonify({'error': 'Поле assignments должно быть списком'}), 400
+        
+        RACIAssignment.query.filter_by(task_id=task.id).delete()
+        
+        for assignment in data['assignments']:
+            if not all(k in assignment for k in ['user_id', 'role_id']):
+                return jsonify({'error': 'Некорректный формат назначения RACI'}), 400
+            raci = RACIAssignment(
+                task_id=task.id,
+                user_id=assignment['user_id'],
+                role_id=assignment['role_id'],
+                assigned_by=current_user_id
+            )
+            db.session.add(raci)
+        
+        db.session.commit()
+        return jsonify({'message': 'RACI матрица обновлена'})
+    
+    except ValidationError as e:
+        return jsonify({"error": "Некорректные данные", "details": e.messages}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Внутренняя ошибка", "details": str(e)}), 500
 
 @tasks_bp.route('/<int:task_id>/raci', methods=['GET'])
 @jwt_required()
 def get_task_raci(task_id):
-    """Получение RACI-матрицы для задачи (доступно участникам проекта)."""
     task = Task.query.get_or_404(task_id)
     current_user_id = int(get_jwt_identity())
-    
     stage = ProjectStage.query.get(task.stage_id)
-    if not ProjectMember.query.filter_by(
-        user_id=current_user_id,
-        project_id=stage.project_id
-    ).first():
+    
+    if not ProjectMember.query.filter_by(user_id=current_user_id, project_id=stage.project_id).first():
         return jsonify({'error': 'Доступ закрыт'}), 403
     
-    raci_assignments = RACIAssignment.query.filter_by(stage_id=task.stage_id).all()
+    raci_assignments = RACIAssignment.query.filter_by(task_id=task.id).all()
     return jsonify([{
         'user_id': a.user_id,
-        'username': a.user.username,
-        'role': a.role.title if a.role else None
+        'username': User.query.get(a.user_id).username, 
+        'role': Role.query.get(a.role_id).title         
     } for a in raci_assignments])
 
 @tasks_bp.route('/<int:task_id>/status', methods=['PATCH'])
 @jwt_required()
 def update_task_status(task_id):
-    """Обновление статуса задачи (доступно ответственному за этап или администратору)."""
     data = request.get_json()
     task = Task.query.get_or_404(task_id)
     current_user_id = int(get_jwt_identity())
-    
     stage = ProjectStage.query.get(task.stage_id)
-    if not ProjectMember.query.filter_by(
-        user_id=current_user_id,
-        project_id=stage.project_id
-    ).first():
+    
+    if not ProjectMember.query.filter_by(user_id=current_user_id, project_id=stage.project_id).first():
         return jsonify({'error': 'Доступ закрыт'}), 403
     
     if not is_admin(current_user_id):
-        if not RACIAssignment.query.filter_by(
-            stage_id=stage.id,
-            user_id=current_user_id,
-            role_id=Role.query.filter_by(title='A').first().id
-        ).first():
-            return jsonify({'error': 'Только руководитель или админ могут изменять статус задачи'}), 403
+        roles = Role.query.filter(Role.title.in_(['R', 'A'])).all()
+        role_ids = [role.id for role in roles]
+        if not RACIAssignment.query.filter(RACIAssignment.task_id == task.id, RACIAssignment.user_id == current_user_id, RACIAssignment.role_id.in_(role_ids)).first():
+            return jsonify({'error': 'Только исполнитель, ответственный или админ могут изменять статус'}), 403
     
     if 'is_completed' in data and data['is_completed']:
-        dependencies = TaskDependency.query.filter_by(task_id=task.id).all()
-        for dep in dependencies:
-            dep_task = Task.query.get(dep.depends_on_task_id)
-            if not dep_task.is_completed:
-                return jsonify({'error': f'Задача "{task.title}" не может быть завершена, так как зависимая задача "{dep_task.title}" не завершена'}), 400
+        for dep_id in task.depends_on_tasks:
+            dep_task = Task.query.get(dep_id)
+            if dep_task and not dep_task.is_completed:
+                return jsonify({'error': f'Задача "{task.title}" зависит от незавершенной задачи "{dep_task.title}"'}), 400
     
     if 'is_completed' in data:
         task.is_completed = data['is_completed']
-    
     db.session.commit()
     return jsonify({'message': 'Статус задачи обновлен'})
 
 @tasks_bp.route('/<int:task_id>/dependencies', methods=['GET'])
 @jwt_required()
 def get_task_dependencies(task_id):
-    """Получение списка зависимостей задачи (доступно участникам проекта)."""
     task = Task.query.get_or_404(task_id)
     current_user_id = int(get_jwt_identity())
-    
     stage = ProjectStage.query.get(task.stage_id)
-    if not ProjectMember.query.filter_by(
-        user_id=current_user_id,
-        project_id=stage.project_id
-    ).first():
+    
+    if not ProjectMember.query.filter_by(user_id=current_user_id, project_id=stage.project_id).first():
         return jsonify({'error': 'Доступ закрыт'}), 403
     
-    dependencies = TaskDependency.query.filter_by(task_id=task.id).all()
-    return jsonify([{
-        'id': dep.depends_on_task_id,
-        'title': Task.query.get(dep.depends_on_task_id).title
-    } for dep in dependencies])
+    dependencies = [{'id': dep_id, 'title': Task.query.get(dep_id).title if Task.query.get(dep_id) else 'Неизвестно'} for dep_id in task.depends_on_tasks]
+    return jsonify(dependencies)
 
 @tasks_bp.route('/<int:task_id>/dependencies', methods=['PUT'])
 @jwt_required()
 def update_task_dependencies(task_id):
-    """Обновление зависимостей задачи (доступно ответственному за этап или администратору)."""
     current_user_id = int(get_jwt_identity())
     task = Task.query.get_or_404(task_id)
-    
     stage = ProjectStage.query.get(task.stage_id)
-    if not ProjectMember.query.filter_by(
-        user_id=current_user_id,
-        project_id=stage.project_id
-    ).first():
+    
+    if not ProjectMember.query.filter_by(user_id=current_user_id, project_id=stage.project_id).first():
         return jsonify({'error': 'Доступ закрыт'}), 403
     
     if not is_admin(current_user_id):
-        if not RACIAssignment.query.filter_by(
-            stage_id=stage.id,
-            user_id=current_user_id,
-            role_id=Role.query.filter_by(title='A').first().id
-        ).first():
-            return jsonify({'error': 'Только руководитель или админ могут изменять зависимости'}), 403
+        accountable_role = Role.query.filter_by(title='A').first()
+        if not RACIAssignment.query.filter_by(task_id=task.id, user_id=current_user_id, role_id=accountable_role.id).first():
+            return jsonify({'error': 'Только ответственный или админ могут изменять зависимости'}), 403
     
     try:
         schema = TaskDependencySchema()
         data = schema.load(request.get_json())
-        
         dependencies = data.get('dependencies', [])
-        dependency_tasks = []
-        for dep_title in dependencies:
-            dep_task = Task.query.filter_by(stage_id=task.stage_id, title=dep_title).first()
-            if not dep_task:
-                return jsonify({'error': f'Задача с названием "{dep_title}" не найдена в этапе'}), 400
-            if dep_task.id == task.id:
+        
+        for dep_id in dependencies:
+            dep_task = Task.query.get(dep_id)
+            if not dep_task or dep_task.stage_id != task.stage_id:
+                return jsonify({'error': f'Задача с ID {dep_id} не найдена в этапе'}), 400
+            if dep_id == task.id:
                 return jsonify({'error': 'Задача не может зависеть от самой себя'}), 400
-            if check_cyclic_dependency(task.id, dep_task.id, db.session):
-                return jsonify({'error': f'Добавление зависимости "{dep_title}" создаёт циклическую зависимость'}), 400
-            dependency_tasks.append(dep_task)
+            if check_cyclic_dependency(task.id, dep_id):
+                return jsonify({'error': f'Добавление зависимости на задачу {dep_id} создает цикл'}), 400
         
-        TaskDependency.query.filter_by(task_id=task.id).delete()
-        
-        for dep_task in dependency_tasks:
-            dependency = TaskDependency(
-                task_id=task.id,
-                depends_on_task_id=dep_task.id
-            )
-            db.session.add(dependency)
-        
-        accountable_users = RACIAssignment.query.filter_by(
-            stage_id=stage.id,
-            role_id=Role.query.filter_by(title='A').first().id
-        ).all()
-        for assignment in accountable_users:
-            if assignment.user_id != current_user_id:
-                notification = Notification(
-                    user_id=assignment.user_id,
-                    message=f"Зависимости задачи '{task.title}' обновлены",
-                    related_entity='task',
-                    related_entity_id=task.id,
-                    created_at=datetime.utcnow()
-                )
-                db.session.add(notification)
-        
+        task.depends_on_tasks = dependencies
         db.session.commit()
         return jsonify({'message': 'Зависимости задачи обновлены'})
     
