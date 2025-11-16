@@ -28,8 +28,7 @@ def create_app():
     jwt = JWTManager(app)
     migrate = Migrate(app, db)  
 
-    CORS(app, resources={r"/*": {"origins": "*"}}) #на время тестирования
-    #CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://192.168.194.0/24", "http://192.168.194.174:3000"]}})
+    CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
     
     from auth import auth_bp
     from projects import projects_bp
@@ -51,8 +50,14 @@ def create_app():
     @app.before_request
     def log_request():
         print(f"Request: {request.method} {request.path} from {request.origin}")
-        if request.method == "OPTIONS":
+        if request.method == 'OPTIONS':
             print("Handling OPTIONS request")
+            resp = app.make_response('')
+            resp.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
+            resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, DELETE, PUT, OPTIONS'
+            resp.headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type'
+            resp.headers['Access-Control-Max-Age'] = '3600'
+            return resp
 
     @app.errorhandler(Exception)
     def handle_error(error):
