@@ -1,0 +1,75 @@
+.dashboard-container {
+  max-width: 1400px;
+  margin: 30px auto;
+  padding: 30px;
+  background: #ffffff;
+  color: #2c3e50;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-container h2 {
+  color: #2c3e50;
+  margin-bottom: 30px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.projects-area {
+  border: 2px solid #dfe4ea;
+  border-radius: 8px;
+  padding: 25px;
+  min-height: 500px;
+  background: #f9f9f9;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+}
+
+.projects-area p {
+  color: #34495e;
+  font-size: 18px;
+  text-align: center;
+  margin-top: 50px;
+}
+
+.fab-create {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 70px;
+  height: 70px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  transition: background 0.3s, transform 0.2s;
+}
+
+.fab-create:hover {
+  background: #2980b9;
+  transform: scale(1.1);
+}
+
+.filter-container {
+  margin-bottom: 20px;
+}
+
+.filter-container select {
+  padding: 8px;
+  margin-left: 10px;
+}
+
+/* Новое: разделитель секций */
+.section-divider {
+  border: 0;
+  height: 1px;
+  background: #dfe4ea;
+  margin: 20px 0;
+}

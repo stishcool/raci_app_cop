@@ -1,0 +1,301 @@
+.project-form-container {
+  display: flex;
+  flex-direction: row;
+  gap: 200px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 100px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #eef2f7;
+}
+
+/* Левая часть - форма */
+.form-left {
+  flex: 1;
+  min-width: 400px;
+  padding-right: 20px;
+  border-right: 2px solid #f1f3f4;
+}
+
+.form-left h3 {
+  margin: 0 0 25px 0;
+  color: #2c3e50;
+  font-size: 24px;
+  font-weight: 750;
+  text-align: center;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #3498db;
+}
+
+.form-left form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-left label {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 14px;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-left label::before {
+  content: "•";
+  color: #3498db;
+  font-weight: bold;
+}
+
+.form-left input,
+.form-left textarea {
+  width: 100%;
+  padding: 14px 5px;
+  border: 2px solid #eef2f7;
+  border-radius: 8px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  background: #fafbfc;
+  font-family: inherit;
+}
+
+.form-left input:focus,
+.form-left textarea:focus {
+  border-color: #3498db;
+  outline: none;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-left input:hover,
+.form-left textarea:hover {
+  border-color: #bdc3c7;
+}
+
+.description-textarea {
+  min-height: 420px;
+  max-height: 550px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.form-left button[type="submit"] {
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+}
+
+.form-left button[type="submit"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+  background: linear-gradient(135deg, #2980b9, #2573a7);
+}
+
+/* Правая часть - таблица участников */
+.form-right {
+  flex: 1;
+  min-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-right label {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #eef2f7;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: #fafbfc;
+}
+
+.search-input:focus {
+  border-color: #3498db;
+  outline: none;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* Контейнер для таблицы с фиксированной высотой и скроллом */
+.project-form-table {
+  flex: 1;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 2px solid #eef2f7;
+  border-radius: 8px;
+  background: white;
+}
+
+.members-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.members-table thead {
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 10;
+}
+
+.members-table th {
+  background: #f8f9fa;
+  color: #2c3e50;
+  font-weight: 600;
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 14px;
+  border-bottom: 2px solid #eef2f7;
+}
+
+.members-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #eef2f7;
+  color: #34495e;
+}
+
+/* Убираем все лишние границы и эффекты */
+.members-table tr {
+  cursor: pointer;
+}
+
+.members-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Простое выделение - голубой фон */
+.members-table tr.selected {
+  background: #e3f2fd;
+}
+
+/* Убираем галочки и границы слева */
+.members-table tr.selected::before {
+  content: none;
+}
+
+.members-table tr:hover {
+  background: #f5f5f5;
+}
+
+/* Кнопка "Показать больше" */
+.form-right button:last-child {
+  padding: 16px 178px;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+  align-self: center;
+  width: auto;
+  min-width: 160px;
+}
+
+.form-right button:last-child:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+  background: linear-gradient(135deg, #2980b9, #2573a7);
+}
+
+/* Сообщения об ошибках */
+.error-message {
+  color: #e74c3c;
+  font-size: 14px;
+  padding: 12px 16px;
+  background: #ffeaea;
+  border: 1px solid #ffcccc;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+/* Стили для скроллбара */
+.project-form-table::-webkit-scrollbar {
+  width: 6px;
+}
+
+.project-form-table::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.project-form-table::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.project-form-table::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 968px) {
+  .project-form-container {
+    flex-direction: column;
+    gap: 30px;
+    padding: 20px;
+  }
+  
+  .form-left {
+    padding-right: 0;
+    border-right: none;
+    border-bottom: 2px solid #f1f3f4;
+    padding-bottom: 30px;
+    min-width: auto;
+  }
+  
+  .form-right {
+    min-width: auto;
+  }
+  
+  .form-left h3 {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .project-form-container {
+    padding: 15px;
+  }
+  
+  .members-table {
+    font-size: 13px;
+  }
+  
+  .members-table th,
+  .members-table td {
+    padding: 10px 12px;
+  }
+  
+}

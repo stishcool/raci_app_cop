@@ -1,0 +1,83 @@
+.project-cards {
+  display: contents; /* Убирает вложенный container, карточки — прямые дети .projects-area grid */
+}
+
+.project-card {
+  border: 1px solid #dfe4ea;
+  border-radius: 10px;
+  padding: 20px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: box-shadow 0.3s, transform 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.project-card:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-5px);
+}
+
+.project-title {
+  margin: 0 0 15px;
+  color: #2c3e50;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.project-details p {
+  margin: 8px 0;
+  color: #34495e;
+  font-size: 16px;
+}
+
+.created-at {
+  font-size: 12px;
+  color: #7f8c8d;
+  margin-top: auto; /* Дата внизу */
+}
+
+.archive-button,
+.raci-button,
+.edit-button {
+  margin-top: 15px;
+  margin-right: 10px;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.archive-button {
+  background: #ff4d4f;
+  color: white;
+}
+
+.archive-button:hover {
+  background: #e63946;
+  transform: translateY(-2px);
+}
+
+.raci-button {
+  background: #3498db;
+  color: white;
+}
+
+.raci-button:hover {
+  background: #2980b9;
+  transform: translateY(-2px);
+}
+
+.edit-button {
+  background: #2ecc71;
+  color: white;
+}
+
+.edit-button:hover {
+  background: #27ae60;
+  transform: translateY(-2px);
+}

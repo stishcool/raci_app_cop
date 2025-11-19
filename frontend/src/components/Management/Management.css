@@ -1,0 +1,229 @@
+.management-container {
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  justify-content: center;
+}
+
+.tabs button {
+  padding: 10px 20px;
+  border: none;
+  background: #e0e0e0;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 16px;
+  transition: background 0.3s;
+}
+
+.tabs button.active {
+  background: #007bff;
+  color: white;
+}
+
+.tabs button:hover {
+  background: #d0d0d0;
+}
+
+.tabs button.active:hover {
+  background: #0056b3;
+}
+
+.success-message {
+  color: green;
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #d4edda;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.user-form-container, .user-list-container {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-form-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: flex-start;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.user-form-container label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  text-align: left;
+}
+
+.user-form-container input[type="text"],
+.user-form-container input[type="password"],
+.user-form-container input[type="email"] {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.user-form-container .checkbox-container {
+  display: flex;
+  align-items: center;
+}
+
+.user-form-container input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.user-form-container button,
+.user-list-container button {
+  padding: 8px 16px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.user-form-container button[type="button"],
+.user-list-container button:last-child {
+  background: #6c757d;
+}
+
+.user-form-container button:hover,
+.user-list-container button:hover {
+  background: #0056b3;
+}
+
+.user-form-container button[type="button"]:hover,
+.user-list-container button:last-child:hover {
+  background: #5a6268;
+}
+
+.user-form-container button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+}
+
+.user-list-container .filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+  justify-content: center;
+}
+
+.user-list-container .filters select,
+.user-list-container .filters input[type="text"] {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.user-table {
+  width: 100%;
+  max-width: 800px;
+  border-collapse: collapse;
+  margin: 20px auto;
+}
+
+.user-table th,
+.user-table td {
+  padding: 12px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.user-table th {
+  background: #f0f0f0;
+  font-weight: bold;
+}
+
+.user-table td {
+  background: #fff;
+}
+
+.user-table .toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+  vertical-align: middle;
+}
+
+.user-table .toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.user-table .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 20px;
+}
+
+.user-table .slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+.user-table input:checked + .slider {
+  background-color: #007bff;
+}
+
+.user-table input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.user-table .status-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.error-message {
+  color: red;
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #f8d7da;
+  border-radius: 4px;
+  text-align: center;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}

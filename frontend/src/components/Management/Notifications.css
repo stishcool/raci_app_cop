@@ -1,0 +1,51 @@
+.notifications-container {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #fff;
+}
+
+.notifications-container h2 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+}
+
+.notifications-list {
+  list-style: none;
+  padding: 0;
+}
+
+.notifications-list li {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  color: #2c3e50;
+}
+
+.notifications-list li.unread {
+  font-weight: bold;
+  color: #d32f2f; /* Красный для непрочитанных */
+}
+
+.error-message {
+  color: red;
+  background: #f8d7da;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.notifications-list li.read {
+  font-style: italic;
+  opacity: 0.5;
+  background-color: rgba(128, 128, 128, 0.2); /* Серая полупрозрачная заливка */
+  color: #757575;
+}
+
+.notifications-list li.unread {
+  font-weight: bold;
+  color: #d32f2f;
+}
+
+.notifications-list input[type="checkbox"] {
+  margin-right: 10px;
+}
