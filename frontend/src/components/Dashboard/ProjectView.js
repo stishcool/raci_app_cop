@@ -29,7 +29,7 @@ const ProjectView = ({ user, isAdmin }) => {
       setProjectMembers(membersData.map(m => ({
         id: m.user_id,
         full_name: m.full_name,
-        positions: m.positions?.join(', ') || 'Нет должности',  // Изменено: все должности через запятую
+        positions: m.positions?.join(', ') || 'Нет должности',
       })));
     } catch (error) {
       setError(error.message || 'Ошибка загрузки данных');
@@ -97,7 +97,7 @@ const ProjectView = ({ user, isAdmin }) => {
           <ul className="members-list">
             {projectMembers.map(member => (
               <li key={member.id}>
-                {member.full_name} <span>{member.positions}</span>  {/* Изменено: все должности */}
+                {member.full_name} <span>{member.positions}</span>
                 {isAdmin && !isArchived && member.id !== currentUserId && (
                   <button
                     className="delete-member-button"

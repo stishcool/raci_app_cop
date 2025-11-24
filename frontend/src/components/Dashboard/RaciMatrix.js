@@ -12,6 +12,19 @@ const RaciMatrix = ({ projectId, isAdmin }) => {
   const [error, setError] = useState('');
   const [isEditingStage, setIsEditingStage] = useState(false);
   const [stageTitle, setStageTitle] = useState('');
+  const [editingDeadline, setEditingDeadline] = useState(null);
+  const [tempDeadline, setTempDeadline] = useState('');
+
+  // Предопределенные временные интервалы
+  const timePresets = [
+    { label: '1 день', value: 1 },
+    { label: '3 дня', value: 3 },
+    { label: '1 неделя', value: 7 },
+    { label: '2 недели', value: 14 },
+    { label: '1 месяц', value: 30 },
+    { label: '3 месяца', value: 90 },
+    { label: 'Кастомная дата', value: 'custom' }
+  ];
 
   // Загрузка этапов
   useEffect(() => {
@@ -188,7 +201,8 @@ const RaciMatrix = ({ projectId, isAdmin }) => {
         },
         body: JSON.stringify({ 
           stage_id: selectedStage,
-          title: 'Новая задача'
+          title: 'Новая задача',
+          deadline: null
         }),
       });
       const data = await response.json();
@@ -324,7 +338,138 @@ const RaciMatrix = ({ projectId, isAdmin }) => {
       console.error('RACI update error:', err);
       setError(err.message || 'Ошибка обновления RACI');
     }
+  };
+
+  // Функция для установки дедлайна
+const handleSetDeadline = async (taskId, days) => {
+  try {
+    let newDeadline = null;
     
+    if (days === 'custom') {
+      // Режим кастомной даты - просто активируем редактирование
+      setEditingDeadline(taskId);
+      const task = tasks.find(t => t.id === taskId);
+      setTempDeadline(task?.deadline || '');
+      return;
+    } else if (days > 0) {
+      // Расчет даты на основе дней
+      const deadlineDate = new Date();
+      deadlineDate.setDate(deadlineDate.getDate() + days);
+      deadlineDate.setHours(23, 59, 59, 999); // Конец дня
+      newDeadline = deadlineDate.toISOString().split('T')[0]; // Формат YYYY-MM-DD
+    }
+    
+    console.log('Setting deadline:', { taskId, days, newDeadline });
+    
+    // Обновление на сервере
+    const response = await fetch(`${API_URL}/tasks/${taskId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({ deadline: newDeadline }),
+    });
+
+    const responseData = await response.json();
+    
+    if (!response.ok) {
+      console.error('Server error:', responseData);
+      throw new Error(responseData.error || `Ошибка обновления дедлайна: ${response.status}`);
+    }
+
+    // Обновление локального состояния
+    setTasks(tasks.map(task => 
+      task.id === taskId ? { ...task, deadline: newDeadline } : task
+    ));
+    setEditingDeadline(null);
+    setError('');
+    
+    console.log('Deadline updated successfully');
+
+  } catch (err) {
+    console.error('Deadline update error:', err);
+    setError(err.message || 'Ошибка установки дедлайна');
+  }
+};
+
+// Сохранение кастомной даты
+const handleSaveCustomDeadline = async (taskId) => {
+  try {
+    if (!tempDeadline) {
+      setError('Дата не может быть пустой');
+      return;
+    }
+
+    console.log('Saving custom deadline:', { taskId, tempDeadline });
+    
+    const response = await fetch(`${API_URL}/tasks/${taskId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({ deadline: tempDeadline }),
+    });
+
+    const responseData = await response.json();
+    
+    if (!response.ok) {
+      console.error('Server error:', responseData);
+      throw new Error(responseData.error || `Ошибка обновления дедлайна: ${response.status}`);
+    }
+
+    setTasks(tasks.map(task => 
+      task.id === taskId ? { ...task, deadline: tempDeadline } : task
+    ));
+    setEditingDeadline(null);
+    setError('');
+    
+    console.log('Custom deadline saved successfully');
+
+  } catch (err) {
+    console.error('Custom deadline save error:', err);
+    setError(err.message || 'Ошибка сохранения дедлайна');
+  }
+};
+
+  // Форматирование даты для отображения
+  const formatDeadline = (deadline) => {
+    if (!deadline) return 'Без срока';
+    
+    const date = new Date(deadline);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const diffTime = date - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Сегодня';
+    if (diffDays === 1) return 'Завтра';
+    if (diffDays === -1) return 'Вчера';
+    if (diffDays < 0) return `Просрочено на ${Math.abs(diffDays)} д.`;
+    if (diffDays < 7) return `Осталось ${diffDays} д.`;
+    if (diffDays < 30) return `Осталось ${Math.ceil(diffDays/7)} нед.`;
+    
+    return date.toLocaleDateString('ru-RU');
+  };
+
+  // Получение класса для стилизации просроченных задач
+  const getDeadlineClass = (deadline) => {
+    if (!deadline) return '';
+    
+    const date = new Date(deadline);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const diffTime = date - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return 'deadline-overdue';
+    if (diffDays <= 3) return 'deadline-urgent';
+    if (diffDays <= 7) return 'deadline-warning';
+    
+    return '';
   };
 
   // Получение текущей роли для конкретной задачи и пользователя
@@ -415,13 +560,13 @@ const RaciMatrix = ({ projectId, isAdmin }) => {
           <table className="raci-table">
             <thead>
               <tr>
-                <th>Задачи</th>
+                <th>Задачи / Дедлайны</th>
                 {projectMembers.map(member => (
                   <th key={member.user_id}>
                     <div className="member-header">
                       <div className="member-name">{member.full_name}</div>
                       <div className="member-username">@{member.username}</div>
-                      <div className="member-positions">{member.positions?.join(', ') || 'Нет'}</div>  {/* Новый: должности */}
+                      <div className="member-positions">{member.positions?.join(', ') || 'Нет'}</div>
                     </div>
                   </th>
                 ))}
@@ -429,44 +574,101 @@ const RaciMatrix = ({ projectId, isAdmin }) => {
             </thead>
             <tbody>
               {tasks.map(task => (
-                <tr key={task.id} className="task-row">
-                  <td className="task-title-cell">
-                    {isAdmin ? (
-                      <input
-                        className="task-title-input"
-                        value={task.title}
-                        onChange={(e) => handleEditTask(task.id, e.target.value)}
-                        onBlur={(e) => handleEditTask(task.id, e.target.value)}
-                      />
-                    ) : (
-                      task.title
-                    )}
-                    {isAdmin && (
-                      <button
-                        className="delete-task-button"
-                        onClick={() => handleDeleteTask(task.id)}
-                      >
-                        X
-                      </button>
-                    )}
-                  </td>
-                  {projectMembers.map(member => (
-                    <td key={`${task.id}-${member.user_id}`}>
-                      <select
-                        className="role-select"
-                        disabled={!isAdmin}
-                        value={getCurrentRole(task.id, member.user_id)} // Передаем task.id
-                        onChange={(e) => handleUpdateRole(task.id, member.user_id, e.target.value)} // Передаем task.id
-                      >
-                        <option value="">-</option>
-                        <option value="R">R</option>
-                        <option value="A">A</option>
-                        <option value="C">C</option>
-                        <option value="I">I</option>
-                      </select>
+                <React.Fragment key={task.id}>
+                  {/* Строка с названием задачи */}
+                  <tr className="task-row">
+                    <td className="task-title-cell">
+                      {isAdmin ? (
+                        <input
+                          className="task-title-input"
+                          value={task.title}
+                          onChange={(e) => handleEditTask(task.id, e.target.value)}
+                          onBlur={(e) => handleEditTask(task.id, e.target.value)}
+                        />
+                      ) : (
+                        task.title
+                      )}
+                      {isAdmin && (
+                        <button
+                          className="delete-task-button"
+                          onClick={() => handleDeleteTask(task.id)}
+                        >
+                          X
+                        </button>
+                      )}
                     </td>
-                  ))}
-                </tr>
+                    {projectMembers.map(member => (
+                      <td key={`${task.id}-${member.user_id}`}>
+                        <select
+                          className="role-select"
+                          disabled={!isAdmin}
+                          value={getCurrentRole(task.id, member.user_id)}
+                          onChange={(e) => handleUpdateRole(task.id, member.user_id, e.target.value)}
+                        >
+                          <option value="">-</option>
+                          <option value="R">R</option>
+                          <option value="A">A</option>
+                          <option value="C">C</option>
+                          <option value="I">I</option>
+                        </select>
+                      </td>
+                    ))}
+                  </tr>
+                  
+                  {/* Новая строка для дедлайна */}
+                  <tr className="deadline-row">
+                    <td className="deadline-cell">
+                      <div className="deadline-controls">
+                        {editingDeadline === task.id ? (
+                          <div className="custom-deadline-input">
+                            <input
+                              type="date"
+                              value={tempDeadline}
+                              onChange={(e) => setTempDeadline(e.target.value)}
+                              className="date-input"
+                            />
+                            <button 
+                              onClick={() => handleSaveCustomDeadline(task.id)}
+                              className="save-deadline-btn"
+                            >
+                              ✓
+                            </button>
+                            <button 
+                              onClick={() => setEditingDeadline(null)}
+                              className="cancel-deadline-btn"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="deadline-display">
+                            <span className={`deadline-text ${getDeadlineClass(task.deadline)}`}>
+                              {formatDeadline(task.deadline)}
+                            </span>
+                            {isAdmin && (
+                              <select
+                                className="deadline-select"
+                                value=""
+                                onChange={(e) => handleSetDeadline(task.id, e.target.value === 'custom' ? 'custom' : parseInt(e.target.value))}
+                              >
+                                <option value="">Изменить срок</option>
+                                {timePresets.map(preset => (
+                                  <option key={preset.value} value={preset.value}>
+                                    {preset.label}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    {/* Пустые ячейки для выравнивания */}
+                    {projectMembers.map(member => (
+                      <td key={`deadline-${task.id}-${member.user_id}`}></td>
+                    ))}
+                  </tr>
+                </React.Fragment>
               ))}
             </tbody>
           </table>

@@ -38,8 +38,7 @@ const AdminDashboard = ({ user }) => {
       filtered = filtered.filter(p => !p.is_archived);
     } else if (currentFilter === 'archived') {
       filtered = filtered.filter(p => p.is_archived);
-    } // 'all' — все
-    // Сортировка по created_at (новые сверху)
+    } 
     setFilteredProjects(filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
   };
 
