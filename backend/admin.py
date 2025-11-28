@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-
 from models import db, User, AuditLog, Position, UserPosition
 from werkzeug.security import generate_password_hash
 from sqlalchemy.exc import IntegrityError
@@ -196,8 +195,6 @@ def update_user(user_id):
 @jwt_required(optional=True)
 def get_positions():
     try:
-        identity = get_jwt_identity()
-        
         positions = Position.query.all()
         return jsonify([{
             'id': p.id,

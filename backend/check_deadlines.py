@@ -1,5 +1,5 @@
 from app import create_app
-from models import db, Task, Notification, ProjectStage, RACIAssignment, Role
+from models import db, Task, Notification, ProjectStage, RACIAssignment, Role, Project, ProjectStatus
 from datetime import datetime, timedelta
 
 app = create_app()
@@ -9,9 +9,10 @@ def check_task_deadlines():
         now = datetime.utcnow()
         three_days_later = now + timedelta(days=3)
         
-        tasks = Task.query.filter(
+        tasks = Task.query.join(ProjectStage).join(Project).filter(
             Task.deadline != None,
-            Task.is_completed == False
+            Task.is_completed == False,
+            Project.status == 'approved'
         ).all()
         
         for task in tasks:

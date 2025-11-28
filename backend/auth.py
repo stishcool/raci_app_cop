@@ -26,7 +26,6 @@ def login():
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required()
 def get_current_user():
-
     """Возвращает данные текущего авторизованного пользователя (ID, имя, email, должности)."""
     user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
@@ -109,3 +108,17 @@ def update_my_positions():
         db.session.rollback()
         print(f"Error updating positions: {str(e)}")
         return jsonify({"error": "Ошибка сервера"}), 500
+
+@auth_bp.route('/users', methods=['GET'])
+@jwt_required()
+def get_users():
+    """Получение списка пользователей (доступно любому авторизованному пользователю для выбора членов)."""
+    users = User.query.all()
+    return jsonify([{
+        'id': u.id,
+        'username': u.username,
+        'full_name': u.full_name,
+        'email': u.email,
+        'is_active': u.is_active,
+        'positions': [p.title for p in u.positions]
+    } for u in users])

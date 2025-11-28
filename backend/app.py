@@ -44,7 +44,6 @@ def create_app():
 
     @app.route("/")
     def helloWorld():
-
         return jsonify({"status": "API is working"})
     
     @app.before_request
