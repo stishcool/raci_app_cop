@@ -1,31 +1,8 @@
 import React from 'react';
 import './ProjectCards.css';
 
-const ProjectCards = ({ projects, onOpenDetails, onArchive, onOpenRaci, isAdmin }) => {
-  // Сортировка: незархивированные проекты вверху, заархивированные внизу
+const ProjectCards = ({ projects, onOpenDetails, onArchive, onOpenRaci, onApprove, onReject, isAdmin, showCreator = false }) => {
   const sortedProjects = [...projects].sort((a, b) => (a.is_archived ? 1 : 0) - (b.is_archived ? 1 : 0));
-
-  const handleCardClick = (e, project) => {
-    e.stopPropagation();
-    if (!project.is_archived) {
-      onOpenRaci(project.id);
-    }
-  };
-
-  const handleArchiveClick = (e, projectId) => {
-    e.stopPropagation();
-    onArchive(projectId);
-  };
-
-  const handleRaciClick = (e, projectId) => {
-    e.stopPropagation();
-    onOpenRaci(projectId);
-  };
-
-  const handleEditClick = (e, project) => {
-    e.stopPropagation();
-    onOpenDetails(project);
-  };
 
   return (
     <div className="project-cards">
@@ -33,25 +10,43 @@ const ProjectCards = ({ projects, onOpenDetails, onArchive, onOpenRaci, isAdmin 
         <div
           key={project.id}
           className="project-card"
-          onClick={(e) => handleCardClick(e, project)}
+          onClick={() => onOpenRaci(project.id)}
         >
           <h3 className="project-title">{project.title}</h3>
           <div className="project-details">
             <p><strong>Описание:</strong> {project.description || 'Без описания'}</p>
-            <p><strong>Дедлайн:</strong> {project.deadline || 'Не указан'}</p>
+            {showCreator && <p><strong>Создатель:</strong> {project.creator_full_name || 'Неизвестно'}</p>}
             <p><strong>Статус:</strong> {project.is_archived ? 'Заархивирован' : 'Активен'}</p>
           </div>
           {isAdmin && !project.is_archived && (
             <>
-              <button
-                className="archive-button"
-                onClick={(e) => handleArchiveClick(e, project.id)}
-              >
-                Архивировать
-              </button>
+              {onApprove && (
+                <button
+                  className="approve-button"
+                  onClick={(e) => { e.stopPropagation(); onApprove(project.id); }}
+                >
+                  Одобрить
+                </button>
+              )}
+              {onReject && (
+                <button
+                  className="reject-button"
+                  onClick={(e) => { e.stopPropagation(); onReject(project.id); }}
+                >
+                  Отклонить
+                </button>
+              )}
+              {onArchive && (
+                <button
+                  className="archive-button"
+                  onClick={(e) => { e.stopPropagation(); onArchive(project.id); }}
+                >
+                  Архивировать
+                </button>
+              )}
               <button
                 className="edit-button"
-                onClick={(e) => handleEditClick(e, project)}
+                onClick={(e) => { e.stopPropagation(); onOpenDetails(project.id); }}
               >
                 Изменить
               </button>
@@ -59,7 +54,7 @@ const ProjectCards = ({ projects, onOpenDetails, onArchive, onOpenRaci, isAdmin 
           )}
           <button
             className="raci-button"
-            onClick={(e) => handleRaciClick(e, project.id)}
+            onClick={(e) => { e.stopPropagation(); onOpenRaci(project.id); }}
           >
             RACI
           </button>

@@ -16,6 +16,7 @@
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 .raci-matrix .stage-select,
@@ -25,6 +26,8 @@
   border-radius: 6px;
   font-size: 14px;
   transition: border-color 0.2s;
+  flex: 1;
+  max-width: 300px;
 }
 
 .raci-matrix .stage-select:focus,
@@ -41,6 +44,10 @@
   font-size: 14px;
   font-weight: 500;
   transition: background 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap; 
 }
 
 .raci-matrix .save-button {
@@ -83,60 +90,52 @@
   transform: translateY(-2px);
 }
 
+/* Добавляем стиль для кнопки редактирования этапа */
+.raci-matrix .edit-stage-button {
+  background: #f39c12;
+  color: white;
+}
+
+.raci-matrix .edit-stage-button:hover {
+  background: #e67e22;
+  transform: translateY(-2px);
+}
+
 .raci-matrix .action-buttons {
   display: flex;
-  gap: 12px;
+  gap: 10px;
+  margin-top: 10px;
+  align-items: center;
   flex-wrap: wrap;
 }
 
-.raci-matrix .position-controls,
-.raci-matrix .custom-role-controls {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.raci-matrix .position-select,
-.raci-matrix .custom-role-input {
-  padding: 10px;
-  border: 1px solid #dfe4ea;
-  border-radius: 6px;
-  font-size: 14px;
-}
-
-.raci-matrix .position-select:focus,
-.raci-matrix .custom-role-input:focus {
-  border-color: #3498db;
-  outline: none;
-}
-
-.raci-matrix .add-task-button,
-.raci-matrix .add-position-button,
-.raci-matrix .add-role-button {
-  padding: 10px 16px;
+.raci-matrix .add-task-button {
   background: #3498db;
   color: white;
+  padding: px 12px;
+  border-radius: 4px;
   border: none;
-  border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
-  transition: background 0.2s, transform 0.2s;
 }
 
-.raci-matrix .add-task-button:hover,
-.raci-matrix .add-position-button:hover,
-.raci-matrix .add-role-button:hover {
+.raci-matrix .add-task-button:hover {
   background: #2980b9;
   transform: translateY(-2px);
+}
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .raci-table {
   width: 100%;
   border-collapse: collapse;
-  background: #ffffff;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  min-width: 600px;
 }
 
 .raci-table th,
@@ -151,54 +150,143 @@
   background: #f9f9f9;
   color: #2c3e50;
   font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
-.raci-table .task-row {
+.member-header {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: px;
+  min-width: 120px;
 }
 
-.raci-table .task-title-input {
+.member-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #2c3e50;
+}
+
+.member-username {
+  font-size: 11px;
+  color: #7f8c8d;
+  font-style: italic;
+}
+
+.task-title-cell {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #2c3e50;
+  min-width: 200px;
+  max-width: 300px;
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  border-right: 2px solid #dfe4ea;
+}
+
+.task-title-input {
   width: 100%;
   padding: 8px;
-  border: none;
+  border: 1px solid #dfe4ea;
+  border-radius: 4px;
   font-size: 14px;
+  background: white;
 }
 
-.raci-table .task-title-input:disabled {
-  background: transparent;
+.task-title-input:focus {
+  border-color: #3498db;
+  outline: none;
 }
 
-.raci-table .delete-task-button,
-.raci-table .delete-position-button {
+.raci-table td:not(.task-title-cell) {
+  min-width: 80px;
+  background: white;
+  transition: background-color 0.2s;
+}
+
+.raci-table td:not(.task-title-cell):hover {
+  background: #f8f9fa;
+}
+
+.role-select {
+  width: 100%;
+  padding: 8px 4px;
+  border: 1px solid #dfe4ea;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.role-select:focus {
+  border-color: #3498db;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.role-select:disabled {
+  background: #f8f9fa;
+  cursor: not-allowed;
+  color: #7f8c8d;
+}
+
+.role-select option {
+  font-weight: 600;
+}
+
+.role-select option[value="R"] { color: #e74c3c; }
+.role-select option[value="A"] { color: #3498db; }
+.role-select option[value="C"] { color: #f39c12; }
+.role-select option[value="I"] { color: #27ae60; }
+
+.role-select[value="R"] {
+  background: #ffeaea;
+  color: #e74c3c;
+  border-color: #e74c3c;
+}
+
+.role-select[value="A"] {
+  background: #e3f2fd;
+  color: #3498db;
+  border-color: #3498db;
+}
+
+.role-select[value="C"] {
+  background: #fff3e0;
+  color: #f39c12;
+  border-color: #f39c12;
+}
+
+.role-select[value="I"] {
+  background: #e8f5e8;
+  color: #27ae60;
+  border-color: #27ae60;
+}
+
+.delete-task-button {
   background: #ff4d4f;
   color: white;
   border: none;
-  border-radius: 50%;
+  border-radius: 4px;
   width: 24px;
   height: 24px;
   cursor: pointer;
   font-size: 12px;
+  margin-left: 8px;
   transition: background 0.2s, transform 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.raci-table .delete-task-button:hover,
-.raci-table .delete-position-button:hover {
+.delete-task-button:hover {
   background: #e63946;
   transform: scale(1.1);
-}
-
-.raci-table .role-select {
-  width: 100%;
-  padding: 8px;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.raci-table .role-select:disabled {
-  background: transparent;
 }
 
 .no-data-message {
@@ -206,9 +294,75 @@
   font-size: 16px;
   text-align: center;
   margin-top: 20px;
+  padding: 20px;
+  border: 1px dashed #dfe4ea;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+
+.no-data-message button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
 .error-message {
   color: #e74c3c;
   font-size: 14px;
+  padding: 10px;
+  background: #ffeaea;
+  border: 1px solid #e74c3c;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+@media (max-width: 768px) {
+  .table-container {
+    font-size: 12px;
+  }
+  
+  .raci-table th,
+  .raci-table td {
+    padding: 8px 4px;
+  }
+  
+  .member-header {
+    min-width: 100px;
+  }
+  
+  .task-title-cell {
+    min-width: 150px;
+  }
+
+  .bulk-actions {
+    margin-top: 5px;
+  }
+
+  .bulk-role-select {
+    width: 100%;
+    padding: 4px;
+    border: 1px solid #dfe4ea;
+    border-radius: 4px;
+    font-size: 12px;
+    background: #f8f9fa;
+  }
+
+  .bulk-role-select:focus {
+    border-color: #3498db;
+    outline: none;
+  }
+  
+  /* На мобильных делаем кнопки более компактными */
+  .raci-matrix .stage-controls {
+    gap: 8px;
+  }
+  
+  .raci-matrix .stage-controls button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
 }

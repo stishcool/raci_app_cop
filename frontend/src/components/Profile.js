@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logout, getCurrentUser } from '../api/auth';
+import { API_URL } from '../api/config'; // Добавил import
 import './Profile.css';
 
 const Profile = ({ user, setUser }) => {
@@ -14,6 +15,7 @@ const Profile = ({ user, setUser }) => {
   const [newPassword, setNewPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const isAdmin = user?.positions?.includes('Администратор');
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -36,6 +38,29 @@ const Profile = ({ user, setUser }) => {
     fetchUser();
   }, [navigate, setUser]);
 
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch(`${API_URL}/auth/me`, { // Или /admin/users/:id если для админа, но по коду /auth/me для текущего
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(profile),
+      });
+      if (!response.ok) throw new Error('Ошибка обновления');
+      setSuccess('Профиль обновлён');
+      const updatedUser = await getCurrentUser();
+      setUser(updatedUser);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleChangePassword = async (e) => {
     e.preventDefault();
     setError('');
@@ -52,7 +77,7 @@ const Profile = ({ user, setUser }) => {
     }
 
     try {
-      const response = await fetch('http://192.168.194.174:5000/auth/change-password', {
+      const response = await fetch(`${API_URL}/auth/change-password`, { // Заменил URL
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,18 +114,36 @@ const Profile = ({ user, setUser }) => {
   return (
     <div className="profile-container">
       <h2>Профиль</h2>
-      <div>
-        <label>ФИО</label>
-        <input type="text" value={profile.full_name} disabled />
-      </div>
-      <div>
-        <label>Должность</label>
-        <input type="text" value={profile.position} disabled />
-      </div>
-      <div>
-        <label>Телефон</label>
-        <input type="text" value={profile.phone} disabled />
-      </div>
+      <form onSubmit={handleUpdateProfile}>
+        <div>
+          <label>ФИО</label>
+          <input
+            type="text"
+            value={profile.full_name}
+            onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+            disabled={false} // Всегда editable для юзера/админа по ТЗ
+          />
+        </div>
+        <div>
+          <label>Должность</label>
+          <input
+            type="text"
+            value={profile.position}
+            onChange={(e) => setProfile({ ...profile, position: e.target.value })}
+            disabled={!isAdmin} // Disabled для юзера
+          />
+        </div>
+        <div>
+          <label>Телефон</label>
+          <input
+            type="text"
+            value={profile.phone}
+            onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+            disabled={false} // Editable для всех
+          />
+        </div>
+        <button type="submit">Сохранить изменения</button>
+      </form>
       <div>
         <h3>Смена пароля</h3>
         {error && <div className="error-message">{error}</div>}

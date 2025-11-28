@@ -7,8 +7,8 @@ const Sidebar = ({ user }) => {
   const location = useLocation();
   const isAdmin = user?.positions?.includes('Администратор');
   const tabs = isAdmin
-    ? ['Дашборд', 'Управление', 'Уведомления', 'Профиль']
-    : ['Дашборд', 'Уведомления', 'Профиль'];
+    ? ['Дашборд', 'Управление', 'Запросы', 'Уведомления', 'Профиль']
+    : ['Дашборд', 'Запросы', 'Уведомления', 'Профиль'];
 
   console.log('Sidebar: Рендеринг, текущий путь:', location.pathname, 'вкладки:', tabs, 'пользователь:', user);
 
@@ -16,6 +16,7 @@ const Sidebar = ({ user }) => {
     const routeMap = {
       Дашборд: isAdmin ? '/admin' : '/',
       Управление: '/admin/management',
+      Запросы: isAdmin ? '/admin/requests' : '/requests',
       Уведомления: isAdmin ? '/admin/notifications' : '/notifications',
       Профиль: isAdmin ? '/admin/profile' : '/profile',
     };

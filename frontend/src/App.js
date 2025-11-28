@@ -8,6 +8,10 @@ import UserDashboard from './components/Dashboard/UserDashboard';
 import Management from './components/Management/Management';
 import Notifications from './components/Management/Notifications';
 import Profile from './components/Profile';
+import ProjectCreate from './components/Dashboard/ProjectCreate'; // Новый
+import ProjectEdit from './components/Dashboard/ProjectEdit'; // Новый
+import ProjectView from './components/Dashboard/ProjectView'; // Новый для просмотра/RACI
+import Requests from './components/Requests/Requests'; // Новый импорт для Запросов
 import { getCurrentUser, logout } from './api/auth';
 
 function App() {
@@ -54,16 +58,23 @@ function App() {
         >
           <Route index element={<AdminDashboard user={user} />} />
           <Route path="management" element={<Management />} />
+          <Route path="requests" element={<Requests user={user} />} /> {/* Новый маршрут для админа */}
           <Route path="notifications" element={<Notifications user={user} />} />
           <Route path="profile" element={<Profile user={user} setUser={setUser} />} />
+          <Route path="project/new" element={<ProjectCreate user={user} />} /> {/* Фрейм создания */}
+          <Route path="project/:id" element={<ProjectView user={user} isAdmin={true} />} /> {/* Просмотр/RACI */}
+          <Route path="project/:id/edit" element={<ProjectEdit user={user} />} /> {/* Редактирование */}
         </Route>
         <Route
           path="/"
           element={user && !isAdmin ? <UserLayout user={user} setUser={setUser} /> : <Navigate to="/login" />}
         >
           <Route index element={<UserDashboard user={user} />} />
+          <Route path="requests" element={<Requests user={user} />} /> {/* Новый маршрут для юзера */}
           <Route path="notifications" element={<Notifications user={user} />} />
           <Route path="profile" element={<Profile user={user} setUser={setUser} />} />
+          <Route path="project/new" element={<ProjectCreate user={user} />} /> {/* Новый маршрут для создания запроса юзером */}
+          <Route path="project/:id" element={<ProjectView user={user} isAdmin={false} />} /> {/* Только просмотр для юзера */}
         </Route>
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>

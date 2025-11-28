@@ -21,7 +21,7 @@ const Login = ({ setUser }) => {
       return;
     }
 
-    if (password.length < 5) {
+    if (password.length < 6) {
       setError('Пароль должен быть не менее 6 символов');
       setIsLoading(false);
       return;
@@ -48,9 +48,10 @@ const Login = ({ setUser }) => {
       <h2>Вход в систему</h2>
       {error && <div className="error-message">{error}</div>}
       <form onSubmit={handleSubmit}>
-        <div>
-          <label>Имя пользователя</label>
+        <div className="form-group">
+          <label htmlFor="username">Имя пользователя</label>
           <input
+            id="username"
             type="text"
             placeholder="Имя пользователя"
             value={username}
@@ -59,9 +60,10 @@ const Login = ({ setUser }) => {
             disabled={isLoading}
           />
         </div>
-        <div>
-          <label>Пароль</label>
+        <div className="form-group">
+          <label htmlFor="password">Пароль</label>
           <input
+            id="password"
             type="password"
             placeholder="Пароль"
             value={password}
