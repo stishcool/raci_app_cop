@@ -184,15 +184,28 @@ def update_project(project_id):
         if 'status' in data and is_admin(current_user_id): 
             if project.status == 'draft' and data['status'] == 'approved':
                 
-                project.status = data['status']
-                notification = Notification(
+                if not ProjectMember.query.filter_by(project_id=project.id, user_id=current_user_id).first():
+                    db.session.add(ProjectMember(
+                        project_id=project.id,
+                        user_id=current_user_id,
+                        added_at=datetime.utcnow()
+                ))
+                notification_creator = Notification(
                     user_id=project.created_by,
                     message=f"Ваш запрос на проект '{project.title}' одобрен",
                     related_entity='project',
                     related_entity_id=project.id,
                     created_at=datetime.utcnow()
                 )
-                db.session.add(notification)
+                db.session.add(notification_creator)
+                notification_admin = Notification(
+                    user_id=current_user_id,
+                    message=f"Вы одобрили проект '{project.title}' и добавлены в участники",
+                    related_entity='project',
+                    related_entity_id=project.id,
+                    created_at=datetime.utcnow()
+                )
+                db.session.add(notification_admin)
             else:
                 return jsonify({"error": "Можно менять статус только с draft на approved"}), 400
         

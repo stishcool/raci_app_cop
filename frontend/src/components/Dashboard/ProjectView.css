@@ -24,6 +24,90 @@
   margin-bottom: 10px;
 }
 
+/* Стили для этапов */
+.project-view .stage-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.project-view .stage-select {
+  padding: 8px 15px;
+  border: 1px solid #dfe4ea;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #f9f9f9;
+  color: #2c3e50;
+  min-width: 200px;
+}
+
+.project-view .add-stage-button {
+  background: #3498db;
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.project-view .add-stage-button:hover {
+  background: #2980b9;
+}
+
+/* Форма добавления этапа */
+.project-view .stage-edit-form {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #dfe4ea;
+}
+
+.project-view .stage-title-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #dfe4ea;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.project-view .save-stage-button {
+  background: #2ecc71;
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.project-view .save-stage-button:hover {
+  background: #27ae60;
+}
+
+.project-view .cancel-stage-button {
+  background: #bdc3c7;
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.project-view .cancel-stage-button:hover {
+  background: #a1a9af;
+}
+
 .project-view .project-details {
   flex: 7; /* Левая колонка 70% */
   display: flex;
@@ -179,5 +263,19 @@
 
   .project-view .members-sidebar {
     margin-top: 20px;
+  }
+
+  .project-view .stage-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .project-view .stage-select {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .project-view .stage-edit-form {
+    flex-direction: column;
   }
 }

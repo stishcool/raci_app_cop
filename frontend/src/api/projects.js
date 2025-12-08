@@ -5,7 +5,7 @@ export const getProjects = async () => {
   const token = localStorage.getItem('token');
   if (!token) throw new Error('Не авторизован');
   try {
-    const response = await axios.get(`${API_URL}/projects?status=approved`, {
+    const response = await axios.get(`${API_URL}/projects?status=approved`, { //на заметку для фикса /projects
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
@@ -18,7 +18,7 @@ export const getRequests = async () => {
   const token = localStorage.getItem('token');
   if (!token) throw new Error('Не авторизован');
   try {
-    const response = await axios.get(`${API_URL}/projects?status=draft`, {
+    const response = await axios.get(`${API_URL}/projects/requests`, {  
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;

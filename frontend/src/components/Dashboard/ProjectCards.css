@@ -81,3 +81,43 @@
   background: #27ae60;
   transform: translateY(-2px);
 }
+
+.approve-button,
+.reject-button {
+  margin-top: 15px;
+  margin-right: 10px;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.approve-button {
+  background: #2ecc71;
+  color: white;
+}
+
+.approve-button:hover {
+  background: #27ae60;
+  transform: translateY(-2px);
+}
+
+.reject-button {
+  background: #e74c3c;
+  color: white;
+}
+
+.reject-button:hover {
+  background: #c0392b;
+  transform: translateY(-2px);
+}
+
+.admin-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 15px;
+}

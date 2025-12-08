@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ProjectForm from './ProjectForm';
 import { API_URL } from '../../api/config';
 import { useNavigate } from 'react-router-dom';
+import './ProjectCreate.css'; 
 
 const ProjectCreate = ({ user }) => {
   const [error, setError] = useState('');

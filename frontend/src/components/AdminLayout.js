@@ -4,7 +4,7 @@ import { Outlet } from 'react-router-dom';
 import '../styles/layout.css';
 
 const AdminLayout = ({ user, setUser }) => {
-  const tabs = ['Дашборд', 'Управление', 'Уведомления', 'Профиль'];
+  const tabs = ['Дашборд', 'Управление', 'Запросы', 'Уведомления', 'Профиль'];
 
   console.log('AdminLayout: Рендеринг с пользователем:', user, 'вкладки:', tabs);
 
