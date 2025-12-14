@@ -1,0 +1,238 @@
+# CRM RACI System - General .gitignore
+# Covers both Backend (Python/Flask) and Frontend (React/TypeScript)
+
+# ========================================
+# GENERAL
+# ========================================
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# IDE / Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# ========================================
+# BACKEND (Python/Flask)
+# ========================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+backend/venv/
+backend/env/
+backend/ENV/
+backend/env.bak/
+backend/venv.bak/
+backend/.venv/
+
+# Flask
+backend/instance/
+backend/.webassets-cache
+
+# Database
+backend/*.db
+backend/*.sqlite
+backend/*.sqlite3
+backend/crm_raci.db
+
+# Environment Variables
+backend/.env
+backend/.env.local
+backend/.env.production
+backend/.flaskenv
+
+# Uploads & User Files
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Logs
+backend/*.log
+backend/logs/
+backend/*.log.*
+
+# Unit test / coverage
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/.tox/
+backend/.nox/
+backend/coverage.xml
+backend/*.cover
+backend/.hypothesis/
+
+# Jupyter Notebook
+backend/.ipynb_checkpoints
+
+# pyenv
+backend/.python-version
+
+# Celery
+backend/celerybeat-schedule
+backend/celerybeat.pid
+
+# MyPy
+backend/.mypy_cache/
+backend/.dmypy.json
+backend/dmypy.json
+
+# Pyre
+backend/.pyre/
+
+# ========================================
+# FRONTEND (React/TypeScript/Vite)
+# ========================================
+
+# Dependencies
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.js
+
+# Testing
+frontend/coverage/
+frontend/.nyc_output
+
+# Production Build
+frontend/dist/
+frontend/build/
+
+# Environment Variables
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/.env.production
+
+# Logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/lerna-debug.log*
+frontend/pnpm-debug.log*
+
+# Misc
+frontend/.cache
+frontend/.parcel-cache
+frontend/.next
+frontend/out
+
+# Vite
+frontend/.vite
+
+# TypeScript
+frontend/*.tsbuildinfo
+frontend/.tsbuildinfo
+
+# Storybook
+frontend/.storybook-out
+frontend/storybook-static
+
+# ESLint
+frontend/.eslintcache
+
+# Turbo
+frontend/.turbo
+
+# ========================================
+# DOCKER
+# ========================================
+
+# Docker
+*.dockerfile
+docker-compose.override.yml
+.dockerignore
+
+# ========================================
+# CI/CD
+# ========================================
+
+# GitHub Actions
+.github/workflows/*.secrets
+
+# ========================================
+# DOCUMENTATION
+# ========================================
+
+# Generated documentation
+docs/_build/
+docs/.doctrees/
+
+# ========================================
+# POSTMAN
+# ========================================
+
+# Ignore Postman environment files (contains sensitive data)
+*.postman_environment.json
+
+# Keep collection files
+# !*.postman_collection.json
+
+# ========================================
+# MISC
+# ========================================
+
+# Backup files
+*.bak
+*.backup
+*.tmp
+*.temp
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# Security & Secrets
+*.pem
+*.key
+*.crt
+*.p12
+secrets.json
+credentials.json
+
+# Notes
+TODO.txt
+NOTES.md
+scratch.md
