@@ -24,7 +24,6 @@
 - [RACI матрица](#-raci-матрица)
 - [Скриншоты](#-скриншоты)
 - [Production Deployment](#-production-deployment)
-- [Лицензия](#-лицензия)
 
 ## 📖 Описание
 
