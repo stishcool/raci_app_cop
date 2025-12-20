@@ -79,3 +79,45 @@ def validate_task_raci(task_id):
     validation = RACIService.validate_task_raci(task_id)
     
     return jsonify(validation), 200
+
+
+@bp.route('/assignment/<int:assignment_id>', methods=['PUT'])
+@jwt_required()
+def update_assignment(assignment_id):
+    """Обновить RACI назначение (изменить роль)"""
+    current_user_id = get_jwt_identity()
+    data = request.get_json()
+    
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    assignment, error = RACIService.update_assignment(assignment_id, data, current_user_id)
+    
+    if error:
+        return jsonify({'error': error}), 400
+    
+    return jsonify({
+        'message': 'RACI assignment updated successfully',
+        'assignment': assignment.to_dict()
+    }), 200
+
+@bp.route('/project/<int:project_id>/export-csv', methods=['GET'])
+@jwt_required()
+def export_project_raci_csv(project_id):
+    """Экспортировать RACI матрицу в CSV"""
+    current_user_id = get_jwt_identity()
+    
+    csv_content, error = RACIService.export_project_raci_csv(project_id, current_user_id)
+    
+    if error:
+        return jsonify({'error': error}), 400
+    
+    from flask import Response
+    
+    response = Response(
+        '\ufeff' + csv_content,  # UTF-8 BOM
+        mimetype='text/csv; charset=utf-8'
+    )
+    response.headers['Content-Disposition'] = f'attachment; filename=raci_matrix_project_{project_id}.csv'
+    
+    return response

@@ -7,27 +7,30 @@ import { CreateProjectDialog } from "@/components/features/CreateProjectDialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { SkeletonProjectCard } from "@/components/features/skeletons/SkeletonCard";
+import { ProjectStatus } from "@/types";
 
-
-type FilterType = "all" | "active" | "my";
-
+type FilterType = "all" | "active" | "my" | "rejected";
 
 function ProjectsPage() {
   const [filter, setFilter] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-
   const { data: projects, isLoading } = useQuery({
-    queryKey: ["projects", filter],
-    queryFn: () => projectsApi.getProjects(filter),
+    queryKey: ["projects", filter === "rejected" ? "all" : filter],
+    queryFn: () => projectsApi.getProjects(filter === "rejected" ? "all" : filter),
   });
 
-
-  const filteredProjects = projects?.filter((project) =>
-    project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
+  const filteredProjects = projects
+    ?.filter((project) => {
+      if (filter === "rejected") {
+        return project.status === ProjectStatus.REJECTED;
+      }
+      return true;
+    })
+    ?.filter((project) =>
+      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.description.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   return (
     <div className="p-6 space-y-6">
@@ -47,11 +50,10 @@ function ProjectsPage() {
         </CreateProjectDialog>
       </div>
 
-
       {/* Фильтры и поиск */}
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Фильтры */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button
             variant={filter === "all" ? "default" : "outline"}
             size="sm"
@@ -73,8 +75,14 @@ function ProjectsPage() {
           >
             Мои проекты
           </Button>
+          <Button
+            variant={filter === "rejected" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("rejected")}
+          >
+            Отклоненные
+          </Button>
         </div>
-
 
         {/* Поиск */}
         <div className="relative flex-1 max-w-sm">
@@ -88,7 +96,6 @@ function ProjectsPage() {
           />
         </div>
       </div>
-
 
       {/* Список проектов */}
       {isLoading ? (
@@ -130,6 +137,5 @@ function ProjectsPage() {
     </div>
   );
 }
-
 
 export default ProjectsPage;

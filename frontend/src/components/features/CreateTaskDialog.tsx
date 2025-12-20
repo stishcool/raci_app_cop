@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { tasksApi } from "@/api/tasks";
 import { TaskPriority } from "@/types";
+import { DateTimePicker } from "@/components/ui/DateTimePicker";
 
 interface CreateTaskForm {
   title: string;
@@ -38,6 +39,7 @@ function CreateTaskDialog({ projectId, children }: CreateTaskDialogProps) {
     handleSubmit,
     formState: { errors },
     reset,
+    control, 
   } = useForm<CreateTaskForm>({
     defaultValues: {
       priority: TaskPriority.MEDIUM,
@@ -151,10 +153,16 @@ function CreateTaskDialog({ projectId, children }: CreateTaskDialogProps) {
             {/* Дедлайн */}
             <div className="space-y-2">
               <Label htmlFor="deadline">Дедлайн (необязательно)</Label>
-              <Input
-                id="deadline"
-                type="datetime-local"
-                {...register("deadline")}
+              <Controller
+                name="deadline"
+                control={control}
+                render={({ field }) => (
+                  <DateTimePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Выберите дату и время"
+                  />
+                )}
               />
             </div>
           </div>

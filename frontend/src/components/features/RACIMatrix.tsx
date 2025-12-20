@@ -7,13 +7,12 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 
-
 interface RACIMatrixProps {
   tasks: Task[];
   team: User[];
   projectId: number;
+  isReadOnly?: boolean; 
 }
-
 
 const RACI_ROLES = [
   { 
@@ -42,11 +41,9 @@ const RACI_ROLES = [
   },
 ];
 
-
-function RACIMatrix({ tasks, team, projectId }: RACIMatrixProps) {
+function RACIMatrix({ tasks, team, projectId, isReadOnly = false }: RACIMatrixProps) {  
   const queryClient = useQueryClient();
   const [selectedCell, setSelectedCell] = useState<{ taskId: number; userId: number } | null>(null);
-
 
   const assignRoleMutation = useMutation({
     mutationFn: (data: { task_id: number; user_id: number; role: RACIRole }) =>
@@ -57,13 +54,11 @@ function RACIMatrix({ tasks, team, projectId }: RACIMatrixProps) {
     },
   });
 
-
   const getUserRole = (task: Task, userId: number): RACIRole | null => {
     if (!task.raci_assignments) return null;
     const assignment = task.raci_assignments.find((a) => a.user_id === userId);
     return assignment ? assignment.role : null;
   };
-
 
   const isTaskValid = (task: Task): boolean => {
     if (!task.raci_assignments || task.raci_assignments.length === 0) return false;
@@ -76,14 +71,27 @@ function RACIMatrix({ tasks, team, projectId }: RACIMatrixProps) {
     return hasR && hasA && accountableCount === 1;
   };
 
-
   const handleCellClick = (taskId: number, userId: number, currentRole: RACIRole | null) => {
-    setSelectedCell({ taskId, userId });
+    if (!isReadOnly) {  
+      setSelectedCell({ taskId, userId });
+    }
   };
 
-
-  const handleAssignRole = (role: RACIRole) => {
-    if (!selectedCell) return;
+  const handleAssignRole = async (role: RACIRole) => {
+    if (!selectedCell || isReadOnly) return;  
+    
+    const task = tasks.find(t => t.id === selectedCell.taskId);
+    const existingAssignment = task?.raci_assignments?.find(
+      a => a.user_id === selectedCell.userId
+    );
+    
+    if (existingAssignment) {
+      try {
+        await raciApi.removeAssignment(existingAssignment.id);
+      } catch (error) {
+        console.error("Ошибка удаления старой роли:", error);
+      }
+    }
     
     assignRoleMutation.mutate({
       task_id: selectedCell.taskId,
@@ -92,28 +100,21 @@ function RACIMatrix({ tasks, team, projectId }: RACIMatrixProps) {
     });
   };
 
-
-  const handleExportCSV = () => {
-    let csv = "Задача," + team.map((u) => `${u.first_name} ${u.last_name}`).join(",") + "\n";
-    
-    tasks.forEach((task) => {
-      const row = [task.title];
-      team.forEach((user) => {
-        const role = getUserRole(task, user.id);
-        row.push(role || "");
-      });
-      csv += row.join(",") + "\n";
-    });
-
-
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `raci-matrix-project-${projectId}.csv`;
-    a.click();
+  const handleExportCSV = async () => {
+    try {
+      const blob = await raciApi.exportMatrixCSV(projectId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `raci-matrix-project-${projectId}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Ошибка экспорта CSV:", error);
+    }
   };
-
 
   if (team.length === 0) {
     return (
@@ -127,7 +128,6 @@ function RACIMatrix({ tasks, team, projectId }: RACIMatrixProps) {
     );
   }
 
-
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -136,6 +136,7 @@ function RACIMatrix({ tasks, team, projectId }: RACIMatrixProps) {
           <h2 className="text-xl font-semibold">RACI Матрица</h2>
           <p className="text-sm text-muted-foreground mt-1">
             Распределение ролей и зон ответственности
+            {isReadOnly && <span className="text-destructive ml-2">• Только для чтения</span>}
           </p>
         </div>
         <Button variant="outline" onClick={handleExportCSV}>
@@ -143,7 +144,6 @@ function RACIMatrix({ tasks, team, projectId }: RACIMatrixProps) {
           Экспорт CSV
         </Button>
       </div>
-
 
       {/* Легенда */}
       <div className="flex flex-wrap gap-4 p-4 bg-muted/50 rounded-lg text-sm">
@@ -156,7 +156,6 @@ function RACIMatrix({ tasks, team, projectId }: RACIMatrixProps) {
           </div>
         ))}
       </div>
-
 
       {/* Матрица */}
       <div className="border border-border rounded-lg overflow-hidden dark:border-border">
@@ -208,11 +207,13 @@ function RACIMatrix({ tasks, team, projectId }: RACIMatrixProps) {
                       const isSelected =
                         selectedCell?.taskId === task.id && selectedCell?.userId === user.id;
 
-
                       return (
                         <td
                           key={user.id}
-                          className="p-3 text-center cursor-pointer hover:bg-accent/50 relative border-l dark:border-border"
+                          className={cn(
+                            "p-3 text-center relative border-l dark:border-border",
+                            !isReadOnly && "cursor-pointer hover:bg-accent/50"  
+                          )}
                           onClick={() => handleCellClick(task.id, user.id, role)}
                         >
                           {role && roleConfig ? (
@@ -228,9 +229,8 @@ function RACIMatrix({ tasks, team, projectId }: RACIMatrixProps) {
                             <span className="text-muted-foreground text-xs">—</span>
                           )}
 
-
-                          {/* Выпадающее меню для выбора роли */}
-                          {isSelected && (
+                          {/* Выпадающее меню для выбора роли - только если не readOnly */}
+                          {!isReadOnly && isSelected && (  
                             <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-card border border-border rounded-lg shadow-lg p-2 z-20 flex gap-1 dark:bg-card dark:border-border">
                               {RACI_ROLES.map((r) => (
                                 <button
@@ -270,7 +270,6 @@ function RACIMatrix({ tasks, team, projectId }: RACIMatrixProps) {
         </div>
       </div>
 
-
       {/* Предупреждения */}
       <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
         <div className="flex gap-2">
@@ -288,6 +287,5 @@ function RACIMatrix({ tasks, team, projectId }: RACIMatrixProps) {
     </div>
   );
 }
-
 
 export { RACIMatrix };

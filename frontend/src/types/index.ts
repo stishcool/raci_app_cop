@@ -35,9 +35,12 @@ export interface Project {
     joined_at: string;
   }>;
   team_count?: number;
+  priority?: number; // 0=Low, 1=Medium, 2=High
+  is_archived?: boolean;
   created_at: string;
   updated_at: string;
   published_at?: string;
+  created_by_id?: number;
 }
 
 export enum ProjectStatus {
@@ -52,6 +55,7 @@ export enum ProjectStatus {
 export interface Task {
   id: number;
   project_id: number;
+  milestone_id?: number;
   title: string;
   description: string;
   status: TaskStatus;
@@ -59,6 +63,9 @@ export interface Task {
   deadline?: string;
   created_by: number;
   raci_assignments?: RACIAssignment[];
+  tags?: Tag[];
+  checklist_items?: ChecklistItem[];
+  comments_count?: number;
   created_at: string;
   updated_at: string;
 }
@@ -66,7 +73,7 @@ export interface Task {
 export enum TaskStatus {
   TODO = "TODO",
   IN_PROGRESS = "IN_PROGRESS",
-  IN_REVIEW = "IN_REVIEW",  // ← Было REVIEW, теперь IN_REVIEW
+  IN_REVIEW = "IN_REVIEW", 
   DONE = "DONE",
   BLOCKED = "BLOCKED",
 }
@@ -86,8 +93,11 @@ export interface RACIAssignment {
   user_id: number;
   user_name?: string; 
   role: RACIRole;
+  assigned_by_id: number;
   created_at: string;
+  user?: User;
 }
+
 
 
 export enum RACIRole {
@@ -116,7 +126,7 @@ export interface ActivityLog {
 export interface DashboardStats {
   my_projects_count: number;
   my_tasks_count: number;
-  my_tasks: Task[]; // ← это массив!
+  my_tasks: Task[]; // это массив
   urgent_tasks: Task[];
   urgent_tasks_count: number;
   status_breakdown: {
@@ -152,4 +162,118 @@ export interface PaginatedResponse<T> {
   total: number;
   page: number;
   per_page: number;
+}
+
+// Уведомления
+export interface Notification {
+  id: number;
+  user_id: number;
+  title: string;
+  message: string;
+  type: string;
+  entity_type?: string;
+  entity_id?: number;
+  is_read: boolean;
+  created_at: string;
+}
+
+// Комментарии
+export interface Comment {
+  id: number;
+  task_id: number;
+  user_id: number;
+  user?: User;
+  content: string;
+  parent_id?: number;
+  replies?: Comment[];
+  created_at: string;
+  updated_at: string;
+}
+
+// Этапы проекта (Milestones)
+export interface Milestone {
+  id: number;
+  project_id: number;
+  name: string;
+  description?: string;
+  deadline?: string;
+  status: MilestoneStatus;
+  order_index: number;
+  progress: number; // 0-100
+  tasks_count?: number;
+  completed_tasks_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export enum MilestoneStatus {
+  NOT_STARTED = "NOT_STARTED",
+  IN_PROGRESS = "IN_PROGRESS",
+  COMPLETED = "COMPLETED",
+  BLOCKED = "BLOCKED",
+}
+
+// Чеклисты
+export interface ChecklistItem {
+  id: number;
+  task_id: number;
+  title: string;
+  is_done: boolean;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Теги
+export interface Tag {
+  id: number;
+  name: string;
+  color: string; // HEX цвет
+  project_id?: number;
+  created_at: string;
+}
+
+// Аналитика проекта
+export interface ProjectAnalytics {
+  total_tasks: number;
+  completed_tasks: number;
+  completion_rate: number;
+  overdue_tasks: number;
+  high_priority_tasks: number;
+  tasks_by_status: {
+    TODO: number;
+    IN_PROGRESS: number;
+    IN_REVIEW: number;
+    DONE: number;
+    BLOCKED: number;
+  };
+  tasks_by_milestone: Array<{
+    milestone_id: number;
+    milestone_name: string;
+    task_count: number;
+  }>;
+  team_workload: Array<{
+    user_id: number;
+    full_name: string;
+    task_count: number;
+  }>;
+}
+
+// Админ: Фильтры логов
+export interface AdminLogFilters {
+  page?: number;
+  per_page?: number;
+  user_id?: number;
+  action?: string;
+  entity_type?: string;
+  project_id?: number;
+  date_from?: string;
+  date_to?: string;
+}
+
+// Админ: Фильтры пользователей
+export interface AdminUserFilters {
+  role?: "ADMIN" | "USER";
+  is_active?: boolean;
+  search?: string;
 }

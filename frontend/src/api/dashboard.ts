@@ -14,8 +14,6 @@ export const dashboardApi = {
   getTeamWorkload: async (): Promise<TeamWorkload[]> => {
     const response = await api.get("/dashboard/team-workload");
     
-    console.log('Team workload response:', response.data); // ← Временная отладка
-    
     if (Array.isArray(response.data)) {
       return response.data;
     }

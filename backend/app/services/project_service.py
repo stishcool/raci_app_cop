@@ -56,22 +56,37 @@ class ProjectService:
     
     @staticmethod
     def get_projects(user_id, filter_type='all'):
-        """Получить список проектов"""
+        """Получить проекты с фильтрацией"""
+        from app.models.user import User, SystemRole
+        
         user = db.session.get(User, user_id)
+        
+        if not user:
+            return None, "User not found"
         
         if user.system_role == SystemRole.ADMIN:
             query = Project.query
         else:
-            query = Project.query.join(ProjectUser).filter(
-                ProjectUser.user_id == user_id
-            )
+            accessible_project_ids = db.session.query(ProjectUser.project_id)\
+                .filter_by(user_id=user_id).all()
+            accessible_project_ids = [p[0] for p in accessible_project_ids]
+            
+            created_project_ids = db.session.query(Project.id)\
+                .filter_by(creator_id=user_id).all()
+            created_project_ids = [p[0] for p in created_project_ids]
+            
+            all_project_ids = list(set(accessible_project_ids + created_project_ids))
+            
+            query = Project.query.filter(Project.id.in_(all_project_ids))
         
         if filter_type == 'active':
-            query = query.filter(Project.status == ProjectStatus.ACTIVE)
+            query = query.filter_by(status=ProjectStatus.ACTIVE)
         elif filter_type == 'my':
-            query = query.filter(Project.creator_id == user_id)
+            query = query.filter_by(creator_id=user_id)
+        elif filter_type == 'archived': 
+            query = query.filter_by(status=ProjectStatus.ARCHIVED)
         
-        projects = query.order_by(Project.created_at.desc()).all()
+        projects = query.order_by(Project.priority.desc(), Project.created_at.desc()).all()  
         
         return projects, None
     
@@ -112,18 +127,19 @@ class ProjectService:
         if 'deadline' in data:
             try:
                 from dateutil import parser
-                project.deadline = parser.parse(data['deadline']) if data['deadline'] else None
+                project.deadline = parser.parse(data['deadline'])
             except:
                 pass
         
-        project.updated_at = datetime.utcnow()
+        if 'priority' in data: 
+            project.priority = data['priority']
         
         log = ActivityLog(
             user_id=user_id,
-            project_id=project.id,
+            project_id=project_id,
             action='UPDATE',
             entity_type='PROJECT',
-            entity_id=project.id,
+            entity_id=project_id,
             description=f'Updated project "{project.name}"'
         )
         db.session.add(log)
@@ -201,6 +217,9 @@ class ProjectService:
         
         db.session.commit()
         
+        from app.services.notification_service import NotificationService
+        NotificationService.notify_added_to_project(project, project_user)
+        
         return project_user, None
     
     @staticmethod
@@ -237,3 +256,119 @@ class ProjectService:
         db.session.commit()
         
         return True, None
+
+    @staticmethod
+    def archive_project(project_id, user_id):
+        """Архивировать проект"""
+        project, error = ProjectService.get_project(project_id, user_id)
+        
+        if error:
+            return None, error
+        
+        from app.models.user import User, SystemRole
+        user = db.session.get(User, user_id)
+        
+        if project.creator_id != user_id and user.system_role not in [SystemRole.ADMIN, SystemRole.PROJECT_MANAGER]:
+            return None, "Only project creator, PM or admin can archive project"
+        
+        if project.status not in [ProjectStatus.ACTIVE, ProjectStatus.COMPLETED]:
+            return None, "Only active or completed projects can be archived"
+        
+        project.status = ProjectStatus.ARCHIVED
+        project.archived_at = datetime.utcnow()
+        
+        log = ActivityLog(
+            user_id=user_id,
+            project_id=project_id,
+            action='ARCHIVE',
+            entity_type='PROJECT',
+            entity_id=project_id,
+            description=f'Archived project "{project.name}"'
+        )
+        db.session.add(log)
+        
+        db.session.commit()
+        
+        return project, None
+
+    @staticmethod
+    def restore_project(project_id, user_id):
+        """Восстановить проект из архива"""
+        project, error = ProjectService.get_project(project_id, user_id)
+        
+        if error:
+            return None, error
+        
+        from app.models.user import User, SystemRole
+        user = db.session.get(User, user_id)
+        
+        if project.creator_id != user_id and user.system_role not in [SystemRole.ADMIN, SystemRole.PROJECT_MANAGER]:
+            return None, "Only project creator, PM or admin can restore project"
+        
+        if project.status != ProjectStatus.ARCHIVED:
+            return None, "Only archived projects can be restored"
+        
+        from app.models.milestone import Milestone, MilestoneStatus
+        milestones = Milestone.query.filter_by(project_id=project_id).all()
+        
+        all_completed = all(m.status == MilestoneStatus.COMPLETED for m in milestones) if milestones else False
+        
+        project.status = ProjectStatus.COMPLETED if all_completed else ProjectStatus.ACTIVE
+        project.archived_at = None
+        
+        log = ActivityLog(
+            user_id=user_id,
+            project_id=project_id,
+            action='RESTORE',
+            entity_type='PROJECT',
+            entity_id=project_id,
+            description=f'Restored project "{project.name}" from archive'
+        )
+        db.session.add(log)
+        
+        db.session.commit()
+        
+        return project, None
+
+    @staticmethod
+    def complete_project(project_id, user_id):
+        """Завершить проект (для админа)"""
+        project, error = ProjectService.get_project(project_id, user_id)
+        
+        if error:
+            return None, error
+        
+        from app.models.user import User, SystemRole
+        user = db.session.get(User, user_id)
+        
+        if user.system_role != SystemRole.ADMIN:
+            return None, "Only admin can complete projects"
+        
+        if project.status != ProjectStatus.ACTIVE:
+            return None, "Only active projects can be completed"
+        
+        from app.models.milestone import Milestone, MilestoneStatus
+        milestones = Milestone.query.filter_by(project_id=project_id).all()
+        
+        if milestones:
+            incomplete_milestones = [m for m in milestones if m.status != MilestoneStatus.COMPLETED]
+            if incomplete_milestones:
+                return None, f"Cannot complete project: {len(incomplete_milestones)} milestone(s) not completed"
+        
+        project.status = ProjectStatus.COMPLETED
+        
+        log = ActivityLog(
+            user_id=user_id,
+            project_id=project_id,
+            action='COMPLETE',
+            entity_type='PROJECT',
+            entity_id=project_id,
+            description=f'Completed project "{project.name}"'
+        )
+        db.session.add(log)
+        
+        db.session.commit()
+        
+        ProjectService.archive_project(project_id, user_id)
+        
+        return project, None

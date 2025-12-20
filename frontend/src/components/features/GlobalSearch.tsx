@@ -14,7 +14,6 @@ export function GlobalSearch() {
   const navigate = useNavigate();
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Debounce для производительности
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -23,7 +22,6 @@ export function GlobalSearch() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Закрытие по клику вне компонента
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {

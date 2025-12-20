@@ -4,6 +4,7 @@ from app.models.user import User
 from app.models.activity_log import ActivityLog
 from app.database import db
 from app.services.task_service import TaskService
+import datetime
 
 
 class RACIService:
@@ -70,6 +71,9 @@ class RACIService:
         db.session.add(log)
         
         db.session.commit()
+        
+        from app.services.notification_service import NotificationService
+        NotificationService.notify_task_assigned(task, assigned_user, role.name)
         
         return assignment, None
     
@@ -178,3 +182,112 @@ class RACIService:
             'is_valid': len(warnings) == 0,
             'warnings': warnings
         }
+
+
+    @staticmethod
+    def update_assignment(assignment_id, data, user_id):
+        """Обновить RACI назначение (изменить роль)"""
+        assignment = db.session.get(RACIAssignment, assignment_id)
+        
+        if not assignment:
+            return None, "Assignment not found"
+        
+        task, error = TaskService.get_task(assignment.task_id, user_id)
+        if error:
+            return None, error
+        
+        new_role_name = data.get('role', '').upper()
+        if not new_role_name:
+            return None, "Role is required"
+        
+        try:
+            new_role = RACIRole[new_role_name]
+        except KeyError:
+            return None, f"Invalid role. Must be one of: {', '.join([r.name for r in RACIRole])}"
+        
+        if assignment.role == new_role:
+            return assignment, None
+        
+        old_role = assignment.role.value
+        
+        if new_role == RACIRole.ACCOUNTABLE:
+            existing_accountable = RACIAssignment.query.filter(
+                RACIAssignment.task_id == assignment.task_id,
+                RACIAssignment.role == RACIRole.ACCOUNTABLE,
+                RACIAssignment.id != assignment_id
+            ).first()
+            
+            if existing_accountable:
+                return None, "Task already has an ACCOUNTABLE person. Remove existing ACCOUNTABLE first."
+        
+        assignment.role = new_role
+        assignment.assigned_at = datetime.utcnow()
+        assignment.assigned_by = user_id
+        
+        log = ActivityLog(
+            user_id=user_id,
+            project_id=task.project_id,
+            action='UPDATE_RACI',
+            entity_type='RACI',
+            entity_id=assignment.id,
+            description=f'Changed {assignment.user.username} role from {old_role} to {new_role.value} on task "{task.title}"'
+        )
+        db.session.add(log)
+        
+        db.session.commit()
+        
+        return assignment, None
+
+
+    @staticmethod
+    def export_project_raci_csv(project_id, user_id):
+        """Экспортировать RACI матрицу в CSV"""
+        from app.services.project_service import ProjectService
+        import csv
+        from io import StringIO
+        
+        project, error = ProjectService.get_project(project_id, user_id)
+        if error:
+            return None, error
+        
+        tasks = Task.query.filter_by(project_id=project_id).order_by(Task.created_at).all()
+        
+        from app.models.project import ProjectUser
+        team_members = db.session.query(User).join(ProjectUser).filter(
+            ProjectUser.project_id == project_id
+        ).order_by(User.username).all()
+        
+        output = StringIO()
+        writer = csv.writer(output)
+        
+        header = ['Task ID', 'Task Title', 'Status', 'Priority', 'Deadline']
+        for member in team_members:
+            header.append(f"{member.first_name} {member.last_name} ({member.username})")
+        writer.writerow(header)
+        
+        for task in tasks:
+            row = [
+                task.id,
+                task.title,
+                task.status.value,
+                task.priority,
+                task.deadline.strftime('%Y-%m-%d %H:%M') if task.deadline else ''
+            ]
+            
+            assignments = RACIAssignment.query.filter_by(task_id=task.id).all()
+            assignment_dict = {}
+            for assignment in assignments:
+                if assignment.user_id not in assignment_dict:
+                    assignment_dict[assignment.user_id] = []
+                assignment_dict[assignment.user_id].append(assignment.role.value[0])  # R, A, C, I
+            
+            for member in team_members:
+                roles = assignment_dict.get(member.id, [])
+                row.append(', '.join(roles) if roles else '-')
+            
+            writer.writerow(row)
+        
+        csv_content = output.getvalue()
+        output.close()
+        
+        return csv_content, None

@@ -1,14 +1,13 @@
 {
   "info": {
-    "name": "CRM RACI System - Complete API",
-    "description": "Полная коллекция для тестирования CRM системы управления проектами с RACI матрицей",
-    "version": "1.0.0",
+    "name": "RACI CRM Backend API",
+    "description": "Полная коллекция для тестирования RACI CRM Backend API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
-      "key": "base_url",
-      "value": "http://localhost:5000/api",
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
       "type": "string"
     },
     {
@@ -22,51 +21,57 @@
       "type": "string"
     },
     {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
       "key": "project_id",
-      "value": "1",
+      "value": "",
       "type": "string"
     },
     {
       "key": "task_id",
-      "value": "1",
+      "value": "",
       "type": "string"
     },
     {
-      "key": "user_id",
-      "value": "1",
+      "key": "milestone_id",
+      "value": "",
       "type": "string"
     },
     {
-      "key": "assignment_id",
-      "value": "1",
+      "key": "tag_id",
+      "value": "",
       "type": "string"
     },
     {
       "key": "file_id",
-      "value": "1",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "comment_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "notification_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "checklist_item_id",
+      "value": "",
       "type": "string"
     }
   ],
   "item": [
     {
-      "name": "🔐 Authentication",
+      "name": "01 - Authentication",
       "item": [
         {
-          "name": "Register New User",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.collectionVariables.set('user_id', jsonData.user.id);",
-                  "    console.log('✅ User registered:', jsonData.user.username);",
-                  "}"
-                ]
-              }
-            }
-          ],
+          "name": "Register User",
           "request": {
             "method": "POST",
             "header": [
@@ -75,20 +80,25 @@
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"testuser@example.com\",\n  \"password\": \"password123\",\n  \"first_name\": \"Test\",\n  \"last_name\": \"User\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/register",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "register"]
-            },
-            "description": "Регистрация нового пользователя в системе"
+              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@example.com\",\n  \"password\": \"Password123!\",\n  \"first_name\": \"Test\",\n  \"last_name\": \"User\"\n}"
+            }
           }
         },
         {
-          "name": "Login - Admin",
+          "name": "Login",
           "event": [
             {
               "listen": "test",
@@ -99,8 +109,6 @@
                   "    pm.collectionVariables.set('access_token', jsonData.access_token);",
                   "    pm.collectionVariables.set('refresh_token', jsonData.refresh_token);",
                   "    pm.collectionVariables.set('user_id', jsonData.user.id);",
-                  "    console.log('✅ Admin logged in');",
-                  "    console.log('Access token:', jsonData.access_token.substring(0, 20) + '...');",
                   "}"
                 ]
               }
@@ -114,89 +122,21 @@
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/login",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "login"]
-            },
-            "description": "Вход администратора (username: admin, password: admin123)"
-          }
-        },
-        {
-          "name": "Login - Project Manager",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.collectionVariables.set('access_token', jsonData.access_token);",
-                  "    pm.collectionVariables.set('refresh_token', jsonData.refresh_token);",
-                  "    console.log('✅ PM logged in');",
-                  "}"
-                ]
-              }
             }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"ivanov\",\n  \"password\": \"password123\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/login",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "login"]
-            },
-            "description": "Вход менеджера проекта"
-          }
-        },
-        {
-          "name": "Login - Team Member",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.collectionVariables.set('access_token', jsonData.access_token);",
-                  "    console.log('✅ Team member logged in');",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"petrov\",\n  \"password\": \"password123\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/login",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "login"]
-            },
-            "description": "Вход участника команды"
           }
         },
         {
@@ -210,29 +150,20 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/auth/me",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "me"]
-            },
-            "description": "Получить данные текущего авторизованного пользователя"
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
           }
         },
         {
           "name": "Refresh Token",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.collectionVariables.set('access_token', jsonData.access_token);",
-                  "    console.log('✅ Token refreshed');",
-                  "}"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [
@@ -242,11 +173,16 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/auth/refresh",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "refresh"]
-            },
-            "description": "Обновить access token используя refresh token"
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            }
           }
         },
         {
@@ -263,42 +199,21 @@
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "profile"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"first_name\": \"Иван\",\n  \"last_name\": \"Иванов\",\n  \"phone\": \"+7 999 123 45 67\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/profile",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "profile"]
-            },
-            "description": "Обновить профиль текущего пользователя (имя, фамилия, телефон)"
-          }
-        },
-        {
-          "name": "Change Password",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"current_password\": \"admin123\",\n  \"new_password\": \"newpassword123\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/profile",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "profile"]
-            },
-            "description": "Сменить пароль (требуется текущий пароль)"
+              "raw": "{\n  \"first_name\": \"Updated\",\n  \"last_name\": \"Name\",\n  \"phone\": \"+79001234567\"\n}"
+            }
           }
         },
         {
@@ -311,22 +226,28 @@
                 "value": "Bearer {{access_token}}"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/profile/avatar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "profile",
+                "avatar"
+              ]
+            },
             "body": {
               "mode": "formdata",
               "formdata": [
                 {
                   "key": "avatar",
                   "type": "file",
-                  "src": []
+                  "src": ""
                 }
               ]
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/profile/avatar",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "profile", "avatar"]
-            },
-            "description": "Загрузить аватар пользователя (форматы: png, jpg, jpeg, gif)"
+            }
           }
         },
         {
@@ -340,20 +261,26 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/auth/profile/avatar",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "profile", "avatar"]
-            },
-            "description": "Удалить аватар пользователя"
+              "raw": "{{baseUrl}}/api/auth/profile/avatar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "profile",
+                "avatar"
+              ]
+            }
           }
         }
       ]
     },
     {
-      "name": "👥 Users",
+      "name": "02 - Projects",
       "item": [
         {
-          "name": "Get All Users",
+          "name": "Get All Projects",
           "request": {
             "method": "GET",
             "header": [
@@ -363,64 +290,26 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/users",
-              "host": ["{{base_url}}"],
-              "path": ["users"]
-            },
-            "description": "Получить список всех активных пользователей"
+              "raw": "{{baseUrl}}/api/projects?filter=all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects"
+              ],
+              "query": [
+                {
+                  "key": "filter",
+                  "value": "all",
+                  "description": "all, active, my, archived"
+                }
+              ]
+            }
           }
         },
         {
-          "name": "Get User by ID",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/users/{{user_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["users", "{{user_id}}"]
-            },
-            "description": "Получить пользователя по ID"
-          }
-        },
-        {
-          "name": "Update User",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"first_name\": \"Updated\",\n  \"last_name\": \"Name\",\n  \"phone\": \"+7 999 888 77 66\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/users/{{user_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["users", "{{user_id}}"]
-            },
-            "description": "Обновить данные пользователя (только свой профиль или админ)"
-          }
-        }
-      ]
-    },
-    {
-      "name": "📁 Projects",
-      "item": [
-        {
-          "name": "Create Project (Draft)",
+          "name": "Create Project",
           "event": [
             {
               "listen": "test",
@@ -429,7 +318,6 @@
                   "if (pm.response.code === 201) {",
                   "    var jsonData = pm.response.json();",
                   "    pm.collectionVariables.set('project_id', jsonData.project.id);",
-                  "    console.log('✅ Project created, ID:', jsonData.project.id);",
                   "}"
                 ]
               }
@@ -447,83 +335,20 @@
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"CRM Development Project\",\n  \"description\": \"Разработка CRM системы с RACI матрицей для управления проектами\",\n  \"deadline\": \"2025-12-31T23:59:59\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/projects",
-              "host": ["{{base_url}}"],
-              "path": ["projects"]
-            },
-            "description": "Создать новый проект (статус: DRAFT)"
-          }
-        },
-        {
-          "name": "Get All Projects",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/projects",
-              "host": ["{{base_url}}"],
-              "path": ["projects"]
-            },
-            "description": "Получить список всех проектов"
-          }
-        },
-        {
-          "name": "Get Active Projects",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/projects?filter=active",
-              "host": ["{{base_url}}"],
-              "path": ["projects"],
-              "query": [
-                {
-                  "key": "filter",
-                  "value": "active",
-                  "description": "Фильтр: all, active, my"
-                }
-              ]
-            },
-            "description": "Получить только активные проекты"
-          }
-        },
-        {
-          "name": "Get My Projects",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/projects?filter=my",
-              "host": ["{{base_url}}"],
-              "path": ["projects"],
-              "query": [
-                {
-                  "key": "filter",
-                  "value": "my"
-                }
-              ]
-            },
-            "description": "Получить проекты, где я создатель"
+              "raw": "{\n  \"name\": \"Test Project\",\n  \"description\": \"Project description\",\n  \"deadline\": \"2025-12-31T23:59:59\",\n  \"priority\": 1\n}"
+            }
           }
         },
         {
@@ -537,11 +362,16 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/projects/{{project_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["projects", "{{project_id}}"]
-            },
-            "description": "Получить детальную информацию о проекте"
+              "raw": "{{baseUrl}}/api/projects/{{project_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{project_id}}"
+              ]
+            }
           }
         },
         {
@@ -558,16 +388,21 @@
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{project_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{project_id}}"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Project Name\",\n  \"description\": \"Updated project description\",\n  \"deadline\": \"2026-01-15T23:59:59\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/projects/{{project_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["projects", "{{project_id}}"]
-            },
-            "description": "Обновить информацию о проекте"
+              "raw": "{\n  \"name\": \"Updated Project Name\",\n  \"description\": \"Updated description\",\n  \"priority\": 2\n}"
+            }
           }
         },
         {
@@ -581,11 +416,17 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/projects/{{project_id}}/request-publication",
-              "host": ["{{base_url}}"],
-              "path": ["projects", "{{project_id}}", "request-publication"]
-            },
-            "description": "Запросить публикацию проекта (DRAFT → PENDING_APPROVAL)"
+              "raw": "{{baseUrl}}/api/projects/{{project_id}}/request-publication",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{project_id}}",
+                "request-publication"
+              ]
+            }
           }
         },
         {
@@ -602,16 +443,22 @@
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{project_id}}/team",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{project_id}}",
+                "team"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"user_id\": 2\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/projects/{{project_id}}/team",
-              "host": ["{{base_url}}"],
-              "path": ["projects", "{{project_id}}", "team"]
-            },
-            "description": "Добавить участника в команду проекта"
+            }
           }
         },
         {
@@ -625,11 +472,18 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/projects/{{project_id}}/team/2",
-              "host": ["{{base_url}}"],
-              "path": ["projects", "{{project_id}}", "team", "2"]
-            },
-            "description": "Удалить участника из команды проекта"
+              "raw": "{{baseUrl}}/api/projects/{{project_id}}/team/2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{project_id}}",
+                "team",
+                "2"
+              ]
+            }
           }
         },
         {
@@ -643,9 +497,16 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/projects/{{project_id}}/logs?page=1&per_page=50",
-              "host": ["{{base_url}}"],
-              "path": ["projects", "{{project_id}}", "logs"],
+              "raw": "{{baseUrl}}/api/projects/{{project_id}}/logs?page=1&per_page=50",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{project_id}}",
+                "logs"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -656,14 +517,85 @@
                   "value": "50"
                 }
               ]
-            },
-            "description": "Получить логи активности проекта (вкладка История)"
+            }
+          }
+        },
+        {
+          "name": "Archive Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{project_id}}/archive",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{project_id}}",
+                "archive"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Restore Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{project_id}}/restore",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{project_id}}",
+                "restore"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Complete Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{project_id}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{project_id}}",
+                "complete"
+              ]
+            }
           }
         }
       ]
     },
     {
-      "name": "✅ Tasks",
+      "name": "03 - Tasks",
       "item": [
         {
           "name": "Create Task",
@@ -675,7 +607,6 @@
                   "if (pm.response.code === 201) {",
                   "    var jsonData = pm.response.json();",
                   "    pm.collectionVariables.set('task_id', jsonData.task.id);",
-                  "    console.log('✅ Task created, ID:', jsonData.task.id);",
                   "}"
                 ]
               }
@@ -693,16 +624,20 @@
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"project_id\": {{project_id}},\n  \"title\": \"Implement User Authentication\",\n  \"description\": \"Create JWT-based authentication system with login, register and token refresh\",\n  \"priority\": 2,\n  \"deadline\": \"2025-12-20T18:00:00\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/tasks",
-              "host": ["{{base_url}}"],
-              "path": ["tasks"]
-            },
-            "description": "Создать новую задачу в проекте"
+              "raw": "{\n  \"project_id\": 1,\n  \"title\": \"Test Task\",\n  \"description\": \"Task description\",\n  \"status\": \"TODO\",\n  \"priority\": 1,\n  \"deadline\": \"2025-12-31T23:59:59\"\n}"
+            }
           }
         },
         {
@@ -716,36 +651,24 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/tasks/project/{{project_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["tasks", "project", "{{project_id}}"]
-            },
-            "description": "Получить все задачи проекта"
-          }
-        },
-        {
-          "name": "Get Tasks by Status - TODO",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/tasks/project/{{project_id}}?status=todo",
-              "host": ["{{base_url}}"],
-              "path": ["tasks", "project", "{{project_id}}"],
+              "raw": "{{baseUrl}}/api/tasks/project/{{project_id}}?status=TODO",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "project",
+                "{{project_id}}"
+              ],
               "query": [
                 {
                   "key": "status",
-                  "value": "todo",
+                  "value": "TODO",
                   "description": "TODO, IN_PROGRESS, IN_REVIEW, DONE, BLOCKED"
                 }
               ]
-            },
-            "description": "Фильтр задач по статусу"
+            }
           }
         },
         {
@@ -759,11 +682,16 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/tasks/{{task_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["tasks", "{{task_id}}"]
-            },
-            "description": "Получить детальную информацию о задаче"
+              "raw": "{{baseUrl}}/api/tasks/{{task_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "{{task_id}}"
+              ]
+            }
           }
         },
         {
@@ -780,93 +708,21 @@
                 "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Updated Task Title\",\n  \"description\": \"Updated description\",\n  \"status\": \"IN_PROGRESS\",\n  \"priority\": 1\n}"
-            },
             "url": {
-              "raw": "{{base_url}}/tasks/{{task_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["tasks", "{{task_id}}"]
-            },
-            "description": "Обновить задачу"
-          }
-        },
-        {
-          "name": "Change Task Status to IN_PROGRESS",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/tasks/{{task_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["tasks", "{{task_id}}"]
-            },
-            "description": "Изменить статус задачи на 'В работе'"
-          }
-        },
-        {
-          "name": "Complete Task (DONE)",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"status\": \"DONE\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/tasks/{{task_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["tasks", "{{task_id}}"]
-            },
-            "description": "Завершить задачу"
-          }
-        },
-        {
-          "name": "Get My Tasks (Responsible)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/tasks/my-tasks?role=RESPONSIBLE",
-              "host": ["{{base_url}}"],
-              "path": ["tasks", "my-tasks"],
-              "query": [
-                {
-                  "key": "role",
-                  "value": "RESPONSIBLE",
-                  "description": "RESPONSIBLE, ACCOUNTABLE, CONSULTED, INFORMED"
-                }
+              "raw": "{{baseUrl}}/api/tasks/{{task_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "{{task_id}}"
               ]
             },
-            "description": "Получить задачи, где я назначен исполнителем"
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Task Title\",\n  \"status\": \"IN_PROGRESS\",\n  \"priority\": 2\n}"
+            }
           }
         },
         {
@@ -880,20 +736,146 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/tasks/{{task_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["tasks", "{{task_id}}"]
-            },
-            "description": "Удалить задачу"
+              "raw": "{{baseUrl}}/api/tasks/{{task_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "{{task_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get My Tasks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/my-tasks?role=RESPONSIBLE",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "my-tasks"
+              ],
+              "query": [
+                {
+                  "key": "role",
+                  "value": "RESPONSIBLE",
+                  "description": "RESPONSIBLE, ACCOUNTABLE, CONSULTED, INFORMED"
+                }
+              ]
+            }
           }
         }
       ]
     },
     {
-      "name": "🎯 RACI Matrix",
+      "name": "04 - RACI",
       "item": [
         {
-          "name": "Assign RESPONSIBLE",
+          "name": "Assign RACI Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/raci/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "raci",
+                "assign"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"task_id\": 1,\n  \"user_id\": 2,\n  \"role\": \"RESPONSIBLE\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Task RACI",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/raci/task/{{task_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "raci",
+                "task",
+                "{{task_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remove RACI Assignment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/raci/remove",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "raci",
+                "remove"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"task_id\": 1,\n  \"user_id\": 2,\n  \"role\": \"RESPONSIBLE\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Milestones",
+      "item": [
+        {
+          "name": "Create Milestone",
           "event": [
             {
               "listen": "test",
@@ -901,8 +883,7 @@
                 "exec": [
                   "if (pm.response.code === 201) {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.collectionVariables.set('assignment_id', jsonData.assignment.id);",
-                  "    console.log('✅ RESPONSIBLE assigned');",
+                  "    pm.collectionVariables.set('milestone_id', jsonData.id);",
                   "}"
                 ]
               }
@@ -920,20 +901,134 @@
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/api/milestones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "milestones"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"task_id\": {{task_id}},\n  \"user_id\": 2,\n  \"role\": \"RESPONSIBLE\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/raci/assign",
-              "host": ["{{base_url}}"],
-              "path": ["raci", "assign"]
-            },
-            "description": "Назначить исполнителя (R) - тот, кто делает работу"
+              "raw": "{\n  \"project_id\": 1,\n  \"name\": \"Milestone 1\",\n  \"description\": \"First milestone\",\n  \"deadline\": \"2025-12-31T23:59:59\"\n}"
+            }
           }
         },
         {
-          "name": "Assign ACCOUNTABLE",
+          "name": "Get Project Milestones",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/milestones/project/{{project_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "milestones",
+                "project",
+                "{{project_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Milestone by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/milestones/{{milestone_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "milestones",
+                "{{milestone_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Milestone",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/milestones/{{milestone_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "milestones",
+                "{{milestone_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Milestone\",\n  \"status\": \"IN_PROGRESS\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Milestone Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/milestones/{{milestone_id}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "milestones",
+                "{{milestone_id}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Reorder Milestone",
           "request": {
             "method": "POST",
             "header": [
@@ -946,126 +1041,26 @@
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/api/milestones/{{milestone_id}}/reorder",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "milestones",
+                "{{milestone_id}}",
+                "reorder"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"task_id\": {{task_id}},\n  \"user_id\": 1,\n  \"role\": \"ACCOUNTABLE\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/raci/assign",
-              "host": ["{{base_url}}"],
-              "path": ["raci", "assign"]
-            },
-            "description": "Назначить ответственного (A) - принимает работу (только один!)"
+              "raw": "{\n  \"order\": 2\n}"
+            }
           }
         },
         {
-          "name": "Assign CONSULTED",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"task_id\": {{task_id}},\n  \"user_id\": 3,\n  \"role\": \"CONSULTED\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/raci/assign",
-              "host": ["{{base_url}}"],
-              "path": ["raci", "assign"]
-            },
-            "description": "Назначить консультанта (C) - дает советы"
-          }
-        },
-        {
-          "name": "Assign INFORMED",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"task_id\": {{task_id}},\n  \"user_id\": 4,\n  \"role\": \"INFORMED\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/raci/assign",
-              "host": ["{{base_url}}"],
-              "path": ["raci", "assign"]
-            },
-            "description": "Назначить информируемого (I) - получает уведомления"
-          }
-        },
-        {
-          "name": "Get Task RACI Assignments",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/raci/task/{{task_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["raci", "task", "{{task_id}}"]
-            },
-            "description": "Получить все RACI назначения для задачи"
-          }
-        },
-        {
-          "name": "Get Project RACI Matrix",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/raci/project/{{project_id}}/matrix",
-              "host": ["{{base_url}}"],
-              "path": ["raci", "project", "{{project_id}}", "matrix"]
-            },
-            "description": "Получить полную RACI матрицу проекта (вкладка Матрица)"
-          }
-        },
-        {
-          "name": "Validate Task RACI",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/raci/task/{{task_id}}/validate",
-              "host": ["{{base_url}}"],
-              "path": ["raci", "task", "{{task_id}}", "validate"]
-            },
-            "description": "Валидация RACI (проверка наличия R и A, предупреждения)"
-          }
-        },
-        {
-          "name": "Remove RACI Assignment",
+          "name": "Delete Milestone",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1075,17 +1070,816 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/raci/assignment/{{assignment_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["raci", "assignment", "{{assignment_id}}"]
-            },
-            "description": "Удалить RACI назначение"
+              "raw": "{{baseUrl}}/api/milestones/{{milestone_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "milestones",
+                "{{milestone_id}}"
+              ]
+            }
           }
         }
       ]
     },
     {
-      "name": "📊 Dashboard",
+      "name": "06 - Checklist",
+      "item": [
+        {
+          "name": "Get Task Checklist",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{task_id}}/checklist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "{{task_id}}",
+                "checklist"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Checklist Item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('checklist_item_id', jsonData.item.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{task_id}}/checklist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "{{task_id}}",
+                "checklist"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Checklist item 1\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Checklist Item",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/checklist/{{checklist_item_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checklist",
+                "{{checklist_item_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Updated checklist item\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Toggle Checklist Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/checklist/{{checklist_item_id}}/toggle",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checklist",
+                "{{checklist_item_id}}",
+                "toggle"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reorder Checklist Items",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{task_id}}/checklist/reorder",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "{{task_id}}",
+                "checklist",
+                "reorder"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"id\": 1,\n      \"order\": 0\n    },\n    {\n      \"id\": 2,\n      \"order\": 1\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Checklist Item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/checklist/{{checklist_item_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checklist",
+                "{{checklist_item_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Tags",
+      "item": [
+        {
+          "name": "Get All Tags",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tags",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tags"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Tag",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('tag_id', jsonData.tag.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tags",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tags"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"urgent\",\n  \"color\": \"#FF0000\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Tag by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tags/{{tag_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tags",
+                "{{tag_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Tag",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tags/{{tag_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tags",
+                "{{tag_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"high-priority\",\n  \"color\": \"#FF5500\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Add Tag to Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{task_id}}/tags/{{tag_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "{{task_id}}",
+                "tags",
+                "{{tag_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remove Tag from Task",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{task_id}}/tags/{{tag_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "{{task_id}}",
+                "tags",
+                "{{tag_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Tasks by Tag",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tags/{{tag_id}}/tasks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tags",
+                "{{tag_id}}",
+                "tasks"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Tag",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tags/{{tag_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tags",
+                "{{tag_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Files",
+      "item": [
+        {
+          "name": "Upload File",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('file_id', jsonData.file.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "files",
+                "upload"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "project_id",
+                  "value": "{{project_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "task_id",
+                  "value": "{{task_id}}",
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Project Files",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/project/{{project_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "files",
+                "project",
+                "{{project_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Task Files",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/task/{{task_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "files",
+                "task",
+                "{{task_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Download File",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/download/{{file_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "files",
+                "download",
+                "{{file_id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete File",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{file_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "files",
+                "{{file_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Comments",
+      "item": [
+        {
+          "name": "Get Task Comments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{task_id}}/comments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "{{task_id}}",
+                "comments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Comment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('comment_id', jsonData.comment.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{task_id}}/comments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "tasks",
+                "{{task_id}}",
+                "comments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"This is a comment\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Comment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/comments/{{comment_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "comments",
+                "{{comment_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Updated comment text\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/comments/{{comment_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "comments",
+                "{{comment_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications?unread_only=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "unread_only",
+                  "value": "false"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/unread-count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "unread-count"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/{{notification_id}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "{{notification_id}}",
+                "read"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/read-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "read-all"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - Dashboard",
       "item": [
         {
           "name": "Get Dashboard Stats",
@@ -1098,11 +1892,16 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/dashboard/stats",
-              "host": ["{{base_url}}"],
-              "path": ["dashboard", "stats"]
-            },
-            "description": "Статистика дашборда: мои задачи, проекты, срочные задачи, статусы"
+              "raw": "{{baseUrl}}/api/dashboard/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "dashboard",
+                "stats"
+              ]
+            }
           }
         },
         {
@@ -1116,17 +1915,106 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/dashboard/team-workload",
-              "host": ["{{base_url}}"],
-              "path": ["dashboard", "team-workload"]
-            },
-            "description": "Загруженность команды (кто сколько задач имеет)"
+              "raw": "{{baseUrl}}/api/dashboard/team-workload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "dashboard",
+                "team-workload"
+              ]
+            }
           }
         }
       ]
     },
     {
-      "name": "🔧 Admin Panel",
+      "name": "12 - Analytics",
+      "item": [
+        {
+          "name": "Get Project Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/project/{{project_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analytics",
+                "project",
+                "{{project_id}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 - Export",
+      "item": [
+        {
+          "name": "Export Project to Excel",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/export/project/{{project_id}}/excel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "export",
+                "project",
+                "{{project_id}}",
+                "excel"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export Project to PDF",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/export/project/{{project_id}}/pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "export",
+                "project",
+                "{{project_id}}",
+                "pdf"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 - Admin",
       "item": [
         {
           "name": "Get Pending Projects",
@@ -1139,11 +2027,16 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/admin/pending-projects",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "pending-projects"]
-            },
-            "description": "Проекты ожидающие одобрения (статус PENDING_APPROVAL)"
+              "raw": "{{baseUrl}}/api/admin/pending-projects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "pending-projects"
+              ]
+            }
           }
         },
         {
@@ -1157,11 +2050,17 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/admin/approve-project/{{project_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "approve-project", "{{project_id}}"]
-            },
-            "description": "Одобрить проект (PENDING_APPROVAL → ACTIVE)"
+              "raw": "{{baseUrl}}/api/admin/approve-project/{{project_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "approve-project",
+                "{{project_id}}"
+              ]
+            }
           }
         },
         {
@@ -1178,20 +2077,26 @@
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/reject-project/{{project_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "reject-project",
+                "{{project_id}}"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"reason\": \"Insufficient project documentation. Please provide more details.\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/reject-project/{{project_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "reject-project", "{{project_id}}"]
-            },
-            "description": "Отклонить проект с указанием причины"
+              "raw": "{\n  \"reason\": \"Project does not meet requirements\"\n}"
+            }
           }
         },
         {
-          "name": "Get Activity Logs",
+          "name": "Get All Logs",
           "request": {
             "method": "GET",
             "header": [
@@ -1201,9 +2106,15 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/admin/logs?page=1&per_page=50",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "logs"],
+              "raw": "{{baseUrl}}/api/admin/logs?page=1&per_page=50",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "logs"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -1212,46 +2123,33 @@
                 {
                   "key": "per_page",
                   "value": "50"
-                }
-              ]
-            },
-            "description": "Глобальные логи системы (все действия всех пользователей)"
-          }
-        },
-        {
-          "name": "Get Activity Logs - Filter by User",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/admin/logs?user_id=1&page=1&per_page=50",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "logs"],
-              "query": [
+                },
                 {
                   "key": "user_id",
-                  "value": "1"
+                  "value": "",
+                  "disabled": true
                 },
                 {
-                  "key": "page",
-                  "value": "1"
+                  "key": "action",
+                  "value": "",
+                  "disabled": true
                 },
                 {
-                  "key": "per_page",
-                  "value": "50"
+                  "key": "entity_type",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "project_id",
+                  "value": "",
+                  "disabled": true
                 }
               ]
-            },
-            "description": "Логи конкретного пользователя"
+            }
           }
         },
         {
-          "name": "Get All Users (Admin)",
+          "name": "Get All Users",
           "request": {
             "method": "GET",
             "header": [
@@ -1261,11 +2159,33 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/admin/users",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "users"]
-            },
-            "description": "Все пользователи системы (включая неактивных)"
+              "raw": "{{baseUrl}}/api/admin/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "role",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "is_active",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
           }
         },
         {
@@ -1282,42 +2202,22 @@
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/create",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "create"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"newemployee\",\n  \"password\": \"password123\",\n  \"system_role\": \"TEAM_MEMBER\",\n  \"first_name\": \"Новый\",\n  \"last_name\": \"Сотрудник\",\n  \"email\": \"newemployee@company.com\",\n  \"phone\": \"+7 999 111 22 33\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/users/create",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "users", "create"]
-            },
-            "description": "Создать пользователя (минимум: username + password)"
-          }
-        },
-        {
-          "name": "Create User - Minimal",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"password123\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/users/create",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "users", "create"]
-            },
-            "description": "Создать пользователя с минимальными данными (email, имя, роль - по умолчанию)"
+              "raw": "{\n  \"username\": \"newuser\",\n  \"email\": \"newuser@example.com\",\n  \"password\": \"Password123!\",\n  \"first_name\": \"New\",\n  \"last_name\": \"User\",\n  \"system_role\": \"TEAM_MEMBER\",\n  \"is_active\": true\n}"
+            }
           }
         },
         {
@@ -1334,48 +2234,28 @@
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/{{user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "{{user_id}}"
+              ]
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"first_name\": \"Updated\",\n  \"last_name\": \"Name\",\n  \"system_role\": \"PROJECT_MANAGER\",\n  \"is_active\": true\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/users/2",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "users", "2"]
-            },
-            "description": "Обновить пользователя (админ может менять роли и сбрасывать пароль)"
-          }
-        },
-        {
-          "name": "Reset User Password (Admin)",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"password\": \"newpassword123\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/admin/users/2",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "users", "2"]
-            },
-            "description": "Сбросить пароль пользователя"
+            }
           }
         },
         {
           "name": "Deactivate User",
           "request": {
-            "method": "DELETE",
+            "method": "PATCH",
             "header": [
               {
                 "key": "Authorization",
@@ -1383,154 +2263,47 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/admin/users/2",
-              "host": ["{{base_url}}"],
-              "path": ["admin", "users", "2"]
-            },
-            "description": "Деактивировать пользователя (мягкое удаление)"
-          }
-        }
-      ]
-    },
-    {
-      "name": "📎 Files",
-      "item": [
-        {
-          "name": "Upload File to Project",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.collectionVariables.set('file_id', jsonData.file.id);",
-                  "    console.log('✅ File uploaded, ID:', jsonData.file.id);",
-                  "}"
-                ]
-              }
+              "raw": "{{baseUrl}}/api/admin/users/{{user_id}}/deactivate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "{{user_id}}",
+                "deactivate"
+              ]
             }
-          ],
+          }
+        },
+        {
+          "name": "Activate User",
           "request": {
-            "method": "POST",
+            "method": "PATCH",
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer {{access_token}}"
               }
             ],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "file",
-                  "type": "file",
-                  "src": []
-                },
-                {
-                  "key": "project_id",
-                  "value": "{{project_id}}",
-                  "type": "text"
-                }
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/{{user_id}}/activate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "{{user_id}}",
+                "activate"
               ]
-            },
-            "url": {
-              "raw": "{{base_url}}/files/upload",
-              "host": ["{{base_url}}"],
-              "path": ["files", "upload"]
-            },
-            "description": "Загрузить файл в проект"
+            }
           }
         },
         {
-          "name": "Upload File to Task",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              }
-            ],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "file",
-                  "type": "file",
-                  "src": []
-                },
-                {
-                  "key": "task_id",
-                  "value": "{{task_id}}",
-                  "type": "text"
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{base_url}}/files/upload",
-              "host": ["{{base_url}}"],
-              "path": ["files", "upload"]
-            },
-            "description": "Загрузить файл к задаче"
-          }
-        },
-        {
-          "name": "Get Project Files",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/files/project/{{project_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["files", "project", "{{project_id}}"]
-            },
-            "description": "Получить все файлы проекта"
-          }
-        },
-        {
-          "name": "Get Task Files",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/files/task/{{task_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["files", "task", "{{task_id}}"]
-            },
-            "description": "Получить все файлы задачи"
-          }
-        },
-        {
-          "name": "Download File",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{access_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/files/download/{{file_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["files", "download", "{{file_id}}"]
-            },
-            "description": "Скачать файл"
-          }
-        },
-        {
-          "name": "Delete File",
+          "name": "Delete User",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1540,11 +2313,17 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/files/{{file_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["files", "{{file_id}}"]
-            },
-            "description": "Удалить файл"
+              "raw": "{{baseUrl}}/api/admin/users/{{user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "{{user_id}}"
+              ]
+            }
           }
         }
       ]

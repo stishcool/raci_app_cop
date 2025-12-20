@@ -1,10 +1,9 @@
 import { api } from "./axios";
 import { Project, User, ActivityLog } from "@/types";
 
-
 export const projectsApi = {
   // Получить все проекты
-  getProjects: async (filter?: "all" | "active" | "my"): Promise<Project[]> => {
+  getProjects: async (filter?: "all" | "active" | "my" | "archived"): Promise<Project[]> => {
     const params = filter && filter !== "all" ? { filter } : {};
     const response = await api.get("/projects", { params });
     
@@ -69,5 +68,25 @@ export const projectsApi = {
     }
     
     return [];
+  },
+
+  // Установить приоритет проекта
+  setPriority: async (projectId: number, priority: number): Promise<void> => {
+    await api.put(`/projects/${projectId}/priority`, { priority });
+  },
+
+  // Архивировать проект
+  archiveProject: async (projectId: number): Promise<void> => {
+    await api.post(`/projects/${projectId}/archive`);
+  },
+
+  // Восстановить проект
+  restoreProject: async (projectId: number): Promise<void> => {
+    await api.post(`/projects/${projectId}/restore`);
+  },
+
+  // Завершить проект (админ/PM)
+  completeProject: async (projectId: number): Promise<void> => {
+    await api.post(`/projects/${projectId}/complete`);
   },
 };

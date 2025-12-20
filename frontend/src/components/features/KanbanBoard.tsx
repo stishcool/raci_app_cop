@@ -21,6 +21,7 @@ import { KanbanTaskCard } from "./KanbanTaskCard";
 interface KanbanBoardProps {
   tasks: Task[];
   projectId: number;
+  isReadOnly?: boolean; 
 }
 
 const columns = [
@@ -42,7 +43,7 @@ const dropAnimation: DropAnimation = {
   easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
 };
 
-function KanbanBoard({ tasks, projectId }: KanbanBoardProps) {
+function KanbanBoard({ tasks, projectId, isReadOnly = false }: KanbanBoardProps) {  
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const queryClient = useQueryClient();
 
@@ -87,12 +88,18 @@ function KanbanBoard({ tasks, projectId }: KanbanBoardProps) {
   );
 
   const handleDragStart = (event: DragStartEvent) => {
+    if (isReadOnly) return;  
     const { active } = event;
     const task = tasks.find((t) => t.id === active.id);
     setActiveTask(task || null);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (isReadOnly) { 
+      setActiveTask(null);
+      return;
+    }
+
     const { active, over } = event;
     setActiveTask(null);
 
@@ -112,6 +119,33 @@ function KanbanBoard({ tasks, projectId }: KanbanBoardProps) {
     updateTaskMutation.mutate({ taskId, status: newStatus });
   };
 
+  if (isReadOnly) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {columns.map((column) => (
+          <div key={column.id} className="space-y-3">
+            <div className={`p-3 rounded-lg ${column.color}`}>
+              <h3 className="font-semibold">{column.title}</h3>
+              <span className="text-sm text-muted-foreground">
+                {tasksByStatus[column.status]?.length || 0}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {(tasksByStatus[column.status] || []).map((task) => (
+                <KanbanTaskCard 
+                  key={task.id} 
+                  task={task} 
+                  projectId={projectId} 
+                  isReadOnly={true} 
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <DndContext
       sensors={sensors}
@@ -128,6 +162,7 @@ function KanbanBoard({ tasks, projectId }: KanbanBoardProps) {
             color={column.color}
             tasks={tasksByStatus[column.status] || []}
             projectId={projectId}
+            isReadOnly={false}  
           />
         ))}
       </div>
