@@ -12,9 +12,10 @@ interface KanbanTaskCardProps {
   task: Task;
   projectId: number;
   isDragging?: boolean;
+  isReadOnly?: boolean;  
 }
 
-function KanbanTaskCard({ task, projectId, isDragging = false }: KanbanTaskCardProps) {
+function KanbanTaskCard({ task, projectId, isDragging = false, isReadOnly = false }: KanbanTaskCardProps) {
   const {
     attributes,
     listeners,
@@ -22,7 +23,10 @@ function KanbanTaskCard({ task, projectId, isDragging = false }: KanbanTaskCardP
     transform,
     transition,
     isDragging: isSortableDragging,
-  } = useSortable({ id: task.id });
+  } = useSortable({ 
+    id: task.id,
+    disabled: isReadOnly,  
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -56,38 +60,53 @@ function KanbanTaskCard({ task, projectId, isDragging = false }: KanbanTaskCardP
   };
 
   return (
-    <TaskDetailSheet task={task} projectId={projectId}>
+    <TaskDetailSheet task={task} projectId={projectId} isReadOnly={isReadOnly}>  
       <div
         ref={setNodeRef}
         style={style}
         className={cn(
-          "bg-card border rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow",
+          "bg-card border rounded-lg p-3 transition-shadow",
           getPriorityColor(task.priority),
+          !isReadOnly && "cursor-pointer hover:shadow-md",
+          isReadOnly && "cursor-default",
           isSortableDragging && "opacity-50 cursor-grabbing",
           "dark:bg-card dark:border-border"
         )}
       >
         {/* Header */}
         <div className="flex items-start gap-2 mb-2">
-          <button
-            {...attributes}
-            {...listeners}
-            className="cursor-grab hover:bg-accent rounded p-1 mt-0.5"
-          >
-            <GripVertical className="h-4 w-4 text-muted-foreground" />
-          </button>
-          <h4 className="text-sm font-medium flex-1 line-clamp-2">{task.title}</h4>
+          {!isReadOnly && ( 
+            <button
+              {...attributes}
+              {...listeners}
+              className="cursor-grab hover:bg-accent rounded p-1 mt-0.5"
+            >
+              <GripVertical className="h-4 w-4 text-muted-foreground" />
+            </button>
+          )}
+          <h4 className={cn(
+            "text-sm font-medium flex-1 line-clamp-2",
+            isReadOnly && "ml-0"  
+          )}>
+            {task.title}
+          </h4>
         </div>
 
         {/* Description */}
         {task.description && (
-          <p className="text-xs text-muted-foreground mb-3 line-clamp-2 ml-7">
+          <p className={cn(
+            "text-xs text-muted-foreground mb-3 line-clamp-2",
+            !isReadOnly && "ml-7", 
+          )}>
             {task.description}
           </p>
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-2 ml-7">
+        <div className={cn(
+          "flex items-center justify-between gap-2",
+          !isReadOnly && "ml-7" 
+        )}>
           {getPriorityBadge(task.priority)}
           {task.deadline && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -99,7 +118,10 @@ function KanbanTaskCard({ task, projectId, isDragging = false }: KanbanTaskCardP
 
         {/* RACI assignments count */}
         {Array.isArray(task.raci_assignments) && task.raci_assignments.length > 0 && (
-          <div className="mt-2 ml-7 text-xs text-muted-foreground">
+          <div className={cn(
+            "mt-2 text-xs text-muted-foreground",
+            !isReadOnly && "ml-7"  
+          )}>
             👥 {task.raci_assignments.length} назначений
           </div>
         )}

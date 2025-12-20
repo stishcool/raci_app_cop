@@ -9,10 +9,11 @@ import { cn } from "@/lib/utils";
 interface TaskItemProps {
   task: Task;
   projectId: number;  
+  isReadOnly?: boolean;
   onClick?: () => void;
 }
 
-function TaskItem({ task, projectId, onClick }: TaskItemProps) {
+function TaskItem({ task, projectId, isReadOnly = false, onClick }: TaskItemProps) {
   const getPriorityBadge = (priority: TaskPriority) => {
     switch (priority) {
       case TaskPriority.CRITICAL:
@@ -49,10 +50,12 @@ function TaskItem({ task, projectId, onClick }: TaskItemProps) {
   };
 
   return (
-    <TaskDetailSheet task={task} projectId={projectId}>
+    <TaskDetailSheet task={task} projectId={projectId} isReadOnly={isReadOnly}> 
       <div
         className={cn(
-          "flex items-start gap-3 p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer",
+          "flex items-start gap-3 p-4 border border-border rounded-lg transition-colors",
+          !isReadOnly && "hover:bg-accent/50 cursor-pointer", 
+          isReadOnly && "cursor-default", 
           task.status === TaskStatus.DONE && "opacity-60"
         )}
       >
@@ -104,4 +107,4 @@ function TaskItem({ task, projectId, onClick }: TaskItemProps) {
   );
 }
 
-export { TaskItem };
+export { TaskItem }; 

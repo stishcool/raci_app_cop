@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -51,7 +51,7 @@ function ProfilePage() {
     },
   });
 
-  useState(() => {
+  useEffect(() => {
     if (profile) {
       resetProfile({
         first_name: profile.first_name,
@@ -60,7 +60,7 @@ function ProfilePage() {
         phone: profile.phone || "",
       });
     }
-  });
+  }, [profile, resetProfile]);
 
   const {
     register: registerPassword,
@@ -77,7 +77,7 @@ function ProfilePage() {
       if (token) {
         setAuth(data, token);
       }
-      toast.success("Профиль обновлен!");
+      toast.success("Данные обновлены!");
     },
     onError: (error: any) => {
       console.error("Update error:", error);
@@ -85,35 +85,24 @@ function ProfilePage() {
     },
   });
 
-  const changePasswordMutation = useMutation({
-    mutationFn: profileApi.changePassword,
-    onSuccess: () => {
-      toast.success("Пароль успешно изменен!");
-      resetPassword();
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Ошибка при смене пароля");
-    },
-  });
-
   const uploadAvatarMutation = useMutation({
     mutationFn: (file: File) => {
-        console.log("Mutation function called with:", file.name);
-        return profileApi.uploadAvatar(file);
+      console.log("Mutation function called with:", file.name);
+      return profileApi.uploadAvatar(file);
     },
     onSuccess: (avatarUrl) => {
-        console.log("✅ Success! Avatar URL:", avatarUrl);
-        queryClient.invalidateQueries({ queryKey: ["profile"] });
-        toast.success("Аватар загружен!");
-        setAvatarPreview(null);
+      console.log("✅ Success! Avatar URL:", avatarUrl);
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      toast.success("Аватар загружен!");
+      setAvatarPreview(null);
     },
     onError: (error: any) => {
-        console.error("❌ Error uploading avatar:", error);
-        console.error("Error response:", error.response);
-        toast.error(error.response?.data?.message || "Ошибка при загрузке аватара");
-        setAvatarPreview(null);
+      console.error("❌ Error uploading avatar:", error);
+      console.error("Error response:", error.response);
+      toast.error(error.response?.data?.message || "Ошибка при загрузке аватара");
+      setAvatarPreview(null);
     },
-    });
+  });
 
   const onSubmitProfile = (data: ProfileForm) => {
     console.log("Submitting profile data:", data);
@@ -125,39 +114,41 @@ function ProfilePage() {
       toast.error("Пароли не совпадают");
       return;
     }
-    changePasswordMutation.mutate({
+    
+    updateProfileMutation.mutate({
       current_password: data.current_password,
       new_password: data.new_password,
     });
+    resetPassword();
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  console.log("File input changed");
-  const file = e.target.files?.[0];
-  
-  if (!file) {
-    console.log("No file selected");
-    return;
-  }
+    console.log("File input changed");
+    const file = e.target.files?.[0];
 
-  console.log("File selected:", file.name, file.size, file.type);
+    if (!file) {
+      console.log("No file selected");
+      return;
+    }
 
-  if (file.size > 5 * 1024 * 1024) {
-    toast.error("Файл слишком большой. Максимум 5MB");
-    return;
-  }
+    console.log("File selected:", file.name, file.size, file.type);
 
-  console.log("Creating preview...");
-  const reader = new FileReader();
-  reader.onloadend = () => {
-    console.log("Preview ready");
-    setAvatarPreview(reader.result as string);
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Файл слишком большой. Максимум 5MB");
+      return;
+    }
+
+    console.log("Creating preview...");
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      console.log("Preview ready");
+      setAvatarPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    console.log("Starting upload...");
+    uploadAvatarMutation.mutate(file);
   };
-  reader.readAsDataURL(file);
-
-  console.log("Starting upload...");
-  uploadAvatarMutation.mutate(file);
-};
 
   if (isLoading && !profile) {
     return (
@@ -182,31 +173,31 @@ function ProfilePage() {
         <Card className="md:col-span-1">
           <CardContent className="pt-6">
             <div className="flex flex-col items-center">
-            {/* Аватар */}
-            <div className="relative mb-4">
-            <Avatar
-                src={avatarPreview || profile?.avatar}
-                fallback={`${profile?.first_name?.[0] || ""}${profile?.last_name?.[0] || ""}`}
-                size="xl"
-                className="border-4 border-background shadow-lg"
-            />
-            
-            <label
-                htmlFor="avatar-upload"
-                className="absolute bottom-0 right-0 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-card border-2 border-background hover:bg-accent transition-colors shadow-md"
-                title="Загрузить аватар"
-            >
-                <Upload className="h-4 w-4" />
-                <input
-                id="avatar-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarChange}
-                disabled={uploadAvatarMutation.isPending}
+              {/* Аватар */}
+              <div className="relative mb-4">
+                <Avatar
+                  src={avatarPreview || profile?.avatar}
+                  fallback={`${profile?.first_name?.[0] || ""}${profile?.last_name?.[0] || ""}`}
+                  size="xl"
+                  className="border-4 border-background shadow-lg"
                 />
-            </label>
-            </div>
+
+                <label
+                  htmlFor="avatar-upload"
+                  className="absolute bottom-0 right-0 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-card border-2 border-background hover:bg-accent transition-colors shadow-md"
+                  title="Загрузить аватар"
+                >
+                  <Upload className="h-4 w-4" />
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                    disabled={uploadAvatarMutation.isPending}
+                  />
+                </label>
+              </div>
               {/* Имя и роль */}
               <h3 className="text-xl font-semibold text-center mb-1">
                 {profile?.first_name} {profile?.last_name}
@@ -382,8 +373,8 @@ function ProfilePage() {
                   )}
                 </div>
 
-                <Button type="submit" disabled={changePasswordMutation.isPending}>
-                  {changePasswordMutation.isPending ? "Изменение..." : "Изменить пароль"}
+                <Button type="submit" disabled={updateProfileMutation.isPending}>
+                  {updateProfileMutation.isPending ? "Изменение..." : "Изменить пароль"}
                 </Button>
               </form>
             </CardContent>
@@ -394,4 +385,4 @@ function ProfilePage() {
   );
 }
 
-export default ProfilePage;
+export default ProfilePage

@@ -46,4 +46,18 @@ export const raciApi = {
   removeAssignment: async (assignmentId: number): Promise<void> => {
     await api.delete(`/raci/assignment/${assignmentId}`);
   },
+
+  // Изменить RACI роль
+  updateAssignment: async (assignmentId: number, role: RACIRole): Promise<RACIAssignment> => {
+    const response = await api.put(`/raci/assignment/${assignmentId}`, { role });
+    return response.data.assignment || response.data;
+  },
+
+  // Экспорт RACI матрицы в CSV
+  exportMatrixCSV: async (projectId: number): Promise<Blob> => {
+    const response = await api.get(`/raci/project/${projectId}/export-csv`, {
+      responseType: "blob",
+    });
+    return response.data;
+  },
 };

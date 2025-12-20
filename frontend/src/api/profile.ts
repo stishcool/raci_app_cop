@@ -2,7 +2,6 @@ import { api } from "./axios";
 import { User } from "@/types";
 
 export const profileApi = {
-  // Получить свой профиль
   getProfile: async (): Promise<User> => {
     const response = await api.get("/auth/me");
     return response.data.user || response.data;
@@ -14,17 +13,11 @@ export const profileApi = {
     last_name?: string;
     email?: string;
     phone?: string;
+    current_password?: string;
+    new_password?: string;
   }): Promise<User> => {
     const response = await api.put("/auth/profile", data);
     return response.data.user || response.data;
-  },
-
-  // Сменить пароль
-  changePassword: async (data: {
-    current_password: string;
-    new_password: string;
-  }): Promise<void> => {
-    await api.post("/auth/profile/password", data);
   },
 
   // Загрузить аватар

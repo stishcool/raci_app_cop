@@ -31,7 +31,8 @@ class TaskService:
             title=title,
             description=data.get('description', '').strip(),
             status=TaskStatus.TODO,
-            priority=data.get('priority', 0)
+            priority=data.get('priority', 0),
+            milestone_id=data.get('milestone_id')  
         )
         
         if data.get('deadline'):
@@ -100,7 +101,7 @@ class TaskService:
         if error:
             return None, error
         
-        old_status = task.status
+        old_status = task.status.value if 'status' in data else None
         
         if 'title' in data:
             task.title = data['title'].strip()
@@ -111,22 +112,20 @@ class TaskService:
         if 'status' in data:
             try:
                 task.status = TaskStatus[data['status'].upper()]
-                if task.status == TaskStatus.DONE and old_status != TaskStatus.DONE:
-                    task.completed_at = datetime.utcnow()
             except KeyError:
-                pass
+                return None, f"Invalid status. Must be one of: {', '.join([s.name for s in TaskStatus])}"
         
         if 'priority' in data:
             task.priority = data['priority']
         
         if 'deadline' in data:
             try:
-                from dateutil import parser
-                task.deadline = parser.parse(data['deadline']) if data['deadline'] else None
-            except:
-                pass
+                task.deadline = datetime.fromisoformat(data['deadline'].replace('Z', '+00:00'))
+            except ValueError:
+                return None, "Invalid deadline format. Use ISO 8601 format."
         
-        task.updated_at = datetime.utcnow()
+        if 'milestone_id' in data:
+            task.milestone_id = data['milestone_id']
         
         log = ActivityLog(
             user_id=user_id,
@@ -139,6 +138,18 @@ class TaskService:
         db.session.add(log)
         
         db.session.commit()
+        
+        if task.milestone_id:
+            from app.models.milestone import Milestone
+            milestone = db.session.get(Milestone, task.milestone_id)
+            if milestone:
+                milestone.update_status()
+                db.session.commit()
+        
+        if old_status and old_status != task.status.value:
+            from app.services.notification_service import NotificationService
+            changed_by = db.session.get(User, user_id)
+            NotificationService.notify_task_status_changed(task, old_status, task.status.value, changed_by)
         
         return task, None
     

@@ -161,3 +161,53 @@ def get_project_logs(project_id):
         'current_page': page
     }), 200
 
+
+@bp.route('/projects/<int:project_id>/archive', methods=['POST'])
+@jwt_required()
+def archive_project(project_id):
+    """Архивировать проект"""
+    current_user_id = get_jwt_identity()
+    
+    project, error = ProjectService.archive_project(project_id, current_user_id)
+    
+    if error:
+        return jsonify({'error': error}), 400
+    
+    return jsonify({
+        'message': 'Project archived successfully',
+        'project': project.to_dict()
+    }), 200
+
+
+@bp.route('/projects/<int:project_id>/restore', methods=['POST'])
+@jwt_required()
+def restore_project(project_id):
+    """Восстановить проект из архива"""
+    current_user_id = get_jwt_identity()
+    
+    project, error = ProjectService.restore_project(project_id, current_user_id)
+    
+    if error:
+        return jsonify({'error': error}), 400
+    
+    return jsonify({
+        'message': 'Project restored successfully',
+        'project': project.to_dict()
+    }), 200
+
+
+@bp.route('/projects/<int:project_id>/complete', methods=['POST'])
+@jwt_required()
+def complete_project(project_id):
+    """Завершить проект (только админ)"""
+    current_user_id = get_jwt_identity()
+    
+    project, error = ProjectService.complete_project(project_id, current_user_id)
+    
+    if error:
+        return jsonify({'error': error}), 400
+    
+    return jsonify({
+        'message': 'Project completed and archived successfully',
+        'project': project.to_dict()
+    }), 200

@@ -21,7 +21,7 @@ def create_app(config_name='development'):
     
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     
-    from app.routes import auth, users, projects, tasks, raci, files, dashboard, admin
+    from app.routes import auth, users, projects, tasks, raci, files, dashboard, admin, notifications, comments, milestones, checklist, tags, analytics, export
     
     app.register_blueprint(auth.bp, url_prefix='/api/auth')
     app.register_blueprint(users.bp, url_prefix='/api/users')
@@ -31,6 +31,13 @@ def create_app(config_name='development'):
     app.register_blueprint(files.bp, url_prefix='/api/files')
     app.register_blueprint(dashboard.bp, url_prefix='/api/dashboard')
     app.register_blueprint(admin.bp, url_prefix='/api/admin')
+    app.register_blueprint(notifications.bp, url_prefix='/api/notifications')
+    app.register_blueprint(comments.bp, url_prefix='/api')
+    app.register_blueprint(milestones.bp, url_prefix='/api')
+    app.register_blueprint(checklist.bp, url_prefix='/api')
+    app.register_blueprint(tags.bp, url_prefix='/api')
+    app.register_blueprint(analytics.bp, url_prefix='/api')
+    app.register_blueprint(export.bp, url_prefix='/api')
     
     from flask import send_from_directory
     

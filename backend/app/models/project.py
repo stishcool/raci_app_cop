@@ -23,13 +23,14 @@ class Project(db.Model):
     deadline = db.Column(db.DateTime)
     
     status = db.Column(db.Enum(ProjectStatus), default=ProjectStatus.DRAFT, nullable=False, index=True)
+    priority = db.Column(db.Integer, default=0, index=True)  
     
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     published_at = db.Column(db.DateTime)
-    archived_at = db.Column(db.DateTime)
+    archived_at = db.Column(db.DateTime)  
     
     creator = db.relationship('User', back_populates='created_projects', foreign_keys=[creator_id])
     team_members = db.relationship('ProjectUser', back_populates='project', cascade='all, delete-orphan')
@@ -45,11 +46,13 @@ class Project(db.Model):
             'description': self.description,
             'deadline': self.deadline.isoformat() if self.deadline else None,
             'status': self.status.value,
+            'priority': self.priority,  
             'creator_id': self.creator_id,
             'creator': self.creator.to_dict() if self.creator else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'published_at': self.published_at.isoformat() if self.published_at else None,
+            'archived_at': self.archived_at.isoformat() if self.archived_at else None,  
         }
         
         if include_team:

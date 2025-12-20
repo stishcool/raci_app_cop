@@ -10,11 +10,13 @@ interface KanbanColumnProps {
   color: string;
   tasks: Task[];
   projectId: number;
+  isReadOnly?: boolean;  
 }
 
-function KanbanColumn({ id, title, color, tasks, projectId }: KanbanColumnProps) {
+function KanbanColumn({ id, title, color, tasks, projectId, isReadOnly = false }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: id,
+    disabled: isReadOnly  
   });
 
   return (
@@ -23,7 +25,7 @@ function KanbanColumn({ id, title, color, tasks, projectId }: KanbanColumnProps)
       className={cn(
         "flex flex-col rounded-lg p-4 min-h-[500px] transition-colors",
         color,
-        isOver && "ring-2 ring-primary"
+        !isReadOnly && isOver && "ring-2 ring-primary" 
       )}
     >
       {/* Header */}
@@ -36,7 +38,12 @@ function KanbanColumn({ id, title, color, tasks, projectId }: KanbanColumnProps)
       <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
         <div className="space-y-3 flex-1">
           {tasks.map((task) => (
-            <KanbanTaskCard key={task.id} task={task} projectId={projectId} />
+            <KanbanTaskCard 
+              key={task.id} 
+              task={task} 
+              projectId={projectId} 
+              isReadOnly={isReadOnly} 
+            />
           ))}
         </div>
       </SortableContext>

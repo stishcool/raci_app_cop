@@ -6,6 +6,7 @@ from app.models.activity_log import ActivityLog
 from app.models.user import User
 from app.database import db
 from datetime import datetime
+from app.services.admin_service import AdminService
 
 bp = Blueprint('admin', __name__)
 
@@ -28,6 +29,8 @@ def get_pending_projects():
 def approve_project(project_id):
     """Одобрить проект"""
     from flask_jwt_extended import get_jwt_identity
+    from app.models.project import Project, ProjectStatus
+    
     current_user_id = get_jwt_identity()
     
     project = db.session.get(Project, project_id)
@@ -39,19 +42,21 @@ def approve_project(project_id):
         return jsonify({'error': 'Project is not pending approval'}), 400
     
     project.status = ProjectStatus.ACTIVE
-    project.published_at = datetime.utcnow()
     
     log = ActivityLog(
         user_id=current_user_id,
-        project_id=project.id,
+        project_id=project_id,
         action='APPROVE',
         entity_type='PROJECT',
-        entity_id=project.id,
+        entity_id=project_id,
         description=f'Approved project "{project.name}"'
     )
     db.session.add(log)
     
     db.session.commit()
+    
+    from app.services.notification_service import NotificationService
+    NotificationService.notify_project_approved(project)
     
     return jsonify({
         'message': 'Project approved successfully',
@@ -65,7 +70,12 @@ def approve_project(project_id):
 def reject_project(project_id):
     """Отклонить проект"""
     from flask_jwt_extended import get_jwt_identity
+    from app.models.project import Project, ProjectStatus
+    
     current_user_id = get_jwt_identity()
+    data = request.get_json()
+    
+    reason = data.get('reason', 'No reason provided') if data else 'No reason provided'
     
     project = db.session.get(Project, project_id)
     
@@ -75,64 +85,83 @@ def reject_project(project_id):
     if project.status != ProjectStatus.PENDING_APPROVAL:
         return jsonify({'error': 'Project is not pending approval'}), 400
     
-    data = request.get_json() or {}
-    reason = data.get('reason', 'No reason provided')
-    
     project.status = ProjectStatus.REJECTED
     
     log = ActivityLog(
         user_id=current_user_id,
-        project_id=project.id,
+        project_id=project_id,
         action='REJECT',
         entity_type='PROJECT',
-        entity_id=project.id,
+        entity_id=project_id,
         description=f'Rejected project "{project.name}". Reason: {reason}'
     )
     db.session.add(log)
     
     db.session.commit()
     
+    from app.services.notification_service import NotificationService
+    NotificationService.notify_project_rejected(project, reason)
+    
     return jsonify({
-        'message': 'Project rejected',
-        'project': project.to_dict()
+        'message': 'Project rejected successfully',
+        'reason': reason
     }), 200
 
 
 @bp.route('/logs', methods=['GET'])
 @jwt_required()
 @admin_required
-def get_activity_logs():
-    """Получить логи активности"""
+def get_all_logs():
+    """Получить логи активности с фильтрами"""
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 50, type=int)
     user_id = request.args.get('user_id', type=int)
+    action = request.args.get('action')
+    entity_type = request.args.get('entity_type')
+    project_id = request.args.get('project_id', type=int)
+    date_from = request.args.get('date_from')
+    date_to = request.args.get('date_to')
     
-    query = ActivityLog.query
-    
-    if user_id:
-        query = query.filter_by(user_id=user_id)
-    
-    logs = query.order_by(ActivityLog.created_at.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
+    result, error = AdminService.get_all_logs(
+        page=page,
+        per_page=per_page,
+        user_id=user_id,
+        action=action,
+        entity_type=entity_type,
+        project_id=project_id,
+        date_from=date_from,
+        date_to=date_to
     )
     
-    return jsonify({
-        'logs': [log.to_dict() for log in logs.items],
-        'total': logs.total,
-        'pages': logs.pages,
-        'current_page': page
-    }), 200
+    if error:
+        return jsonify({'error': error}), 400
+    
+    return jsonify(result), 200
 
 
 @bp.route('/users', methods=['GET'])
 @jwt_required()
 @admin_required
 def get_all_users():
-    """Получить всех пользователей (админ)"""
-    users = User.query.all()
+    """Получить всех пользователей с фильтрами"""
+    role = request.args.get('role')
+    is_active = request.args.get('is_active')
+    search = request.args.get('search')
+    
+    if is_active is not None:
+        is_active = is_active.lower() in ['true', '1', 'yes']
+    
+    users, error = AdminService.get_all_users_filtered(
+        role=role,
+        is_active=is_active,
+        search=search
+    )
+    
+    if error:
+        return jsonify({'error': error}), 400
     
     return jsonify({
-        'users': [u.to_dict(include_email=True) for u in users]
+        'users': [user.to_dict() for user in users]
     }), 200
 
 @bp.route('/users/create', methods=['POST'])
@@ -289,10 +318,10 @@ def update_user_admin(user_id):
     }), 200
 
 
-@bp.route('/users/<int:user_id>', methods=['DELETE'])
+@bp.route('/users/<int:user_id>/deactivate', methods=['PATCH'])
 @jwt_required()
 @admin_required
-def delete_user(user_id):
+def deactivate_user(user_id):
     """Удалить/деактивировать пользователя (только админ)"""
     from flask_jwt_extended import get_jwt_identity
     from app.models.user import User
@@ -324,4 +353,78 @@ def delete_user(user_id):
     
     return jsonify({
         'message': 'User deactivated successfully'
+    }), 200
+
+@bp.route('/users/<int:user_id>/activate', methods=['PATCH'])
+@jwt_required()
+@admin_required
+def activate_user(user_id):
+    """Активировать пользователя (только админ)"""
+    from flask_jwt_extended import get_jwt_identity
+    from app.models.user import User
+    
+    current_user_id = get_jwt_identity()
+    
+    if current_user_id == user_id:
+        return jsonify({'error': 'Cannot delete your own account'}), 400
+    
+    user = db.session.get(User, user_id)
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    username = user.username
+    
+    user.is_active = True
+    
+    log = ActivityLog(
+        user_id=current_user_id,
+        action='ACTIVATE',
+        entity_type='USER',
+        entity_id=user.id,
+        description=f'Activated user "{username}"'
+    )
+    db.session.add(log)
+    
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'User deactivated successfully'
+    }), 200
+    
+@bp.route('/users/<int:user_id>', methods=['DELETE'])
+@jwt_required()
+@admin_required
+def delete_user(user_id):
+    """Удалить пользователя (только админ)"""
+    from flask_jwt_extended import get_jwt_identity
+    from app.models.user import User
+    
+    current_user_id = get_jwt_identity()
+    
+    if current_user_id == user_id:
+        return jsonify({'error': 'Cannot delete your own account'}), 400
+    
+    user = db.session.get(User, user_id)
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    username = user.username
+    
+    db.session.delete(user)
+    
+    log = ActivityLog(
+        user_id=current_user_id,
+        action='DELETE',
+        entity_type='USER',
+        entity_id=user_id,
+        description=f'Deleted user "{username}"'
+    )
+    db.session.add(log)
+    
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'User deleted successfully'
     }), 200
